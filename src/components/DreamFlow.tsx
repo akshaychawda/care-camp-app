@@ -164,7 +164,7 @@ export function DreamFlow() {
           step === q.key ? (
             <Question
               key={q.key}
-              heading={q.label.replace(/you/i, data.childName ? data.childName : "you")}
+              heading={q.label}
               hint={q.hint}
               value={data[q.key as keyof FormData] as string}
               onChange={(v) => update(q.key as keyof FormData, v)}
