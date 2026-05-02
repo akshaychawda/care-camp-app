@@ -37,7 +37,11 @@ const EMPTY: FormData = {
 const ORDER: Step[] = ["welcome", "parent", "child", "q1", "q2", "q3", "q4", "q5", "loading", "reveal", "next"];
 
 function Logo({ className = "" }: { className?: string }) {
-  return <img src={madLogo} alt="MAD — Make A Difference" className={`h-12 w-auto ${className}`} />;
+  return (
+    <div className={`inline-flex items-center justify-center px-5 py-2 rounded-2xl bg-foreground ${className}`}>
+      <img src={madLogo} alt="MAD — Make A Difference" className="h-8 w-auto" />
+    </div>
+  );
 }
 
 function Header({ onBack, progress }: { onBack?: () => void; progress?: { current: number; total: number } }) {
