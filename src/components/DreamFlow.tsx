@@ -37,7 +37,11 @@ const EMPTY: FormData = {
 const ORDER: Step[] = ["welcome", "parent", "child", "q1", "q2", "q3", "q4", "q5", "loading", "reveal", "next"];
 
 function Logo({ className = "" }: { className?: string }) {
-  return <img src={madLogo} alt="MAD — Make A Difference" className={`h-12 w-auto ${className}`} />;
+  return (
+    <div className={`inline-flex items-center justify-center px-5 py-2 rounded-2xl bg-foreground ${className}`}>
+      <img src={madLogo} alt="MAD — Make A Difference" className="h-8 w-auto" />
+    </div>
+  );
 }
 
 function Header({ onBack, progress }: { onBack?: () => void; progress?: { current: number; total: number } }) {
@@ -307,9 +311,8 @@ function Reveal({ childName, dream, problem, onSent }: {
           height={1024}
           className="w-full aspect-square object-cover"
         />
-        <div className="absolute top-3 right-3 bg-card/90 backdrop-blur rounded-xl px-3 py-1.5 flex items-center gap-1.5">
-          <img src={madLogo} alt="MAD" className="h-5 w-5 object-contain" />
-          <span className="text-xs font-bold text-primary">MAD</span>
+        <div className="absolute top-3 right-3 bg-foreground/90 backdrop-blur rounded-xl px-3 py-2 flex items-center">
+          <img src={madLogo} alt="MAD" className="h-6 w-auto object-contain" />
         </div>
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-5 pt-12">
           <p className="font-display italic text-white text-lg leading-snug">
