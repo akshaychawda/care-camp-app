@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, CalendarIcon, Check, Copy, Share2 } from "lucide-react";
+import { ArrowLeft, CalendarIcon, Check, Copy, Share2, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import QRCode from "qrcode";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { createSession, type CampSession } from "@/lib/api";
 
 export const Route = createFileRoute("/admin/new")({
   component: NewCamp,
@@ -18,17 +19,32 @@ function NewCamp() {
   const [city, setCity] = useState("");
   const [chapter, setChapter] = useState("");
   const [date, setDate] = useState<Date | undefined>();
-  const [created, setCreated] = useState<{ city: string; chapter: string; date: Date; id: string; link: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [created, setCreated] = useState<{ session: CampSession; link: string } | null>(null);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!city || !chapter || !date) return;
-    const id = `${city.toLowerCase()}-${chapter.toLowerCase().replace(/\s+/g, "-")}-${format(date, "yyyy-MM-dd")}`;
-    const link = `${window.location.origin}/?camp=${id}`;
-    setCreated({ city, chapter, date, id, link });
+    setSaving(true);
+    setError(null);
+    try {
+      const session = await createSession(city, chapter, format(date, "yyyy-MM-dd"));
+      const link = `${window.location.origin}/?session=${session.id}`;
+      setCreated({ session, link });
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to create session. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  if (created) return <Confirmation data={created} onReset={() => { setCreated(null); setCity(""); setChapter(""); setDate(undefined); }} />;
+  if (created) return (
+    <Confirmation
+      data={created}
+      onReset={() => { setCreated(null); setCity(""); setChapter(""); setDate(undefined); }}
+    />
+  );
 
   return (
     <div className="px-5 md:px-10 py-6 md:py-10 max-w-2xl">
@@ -67,12 +83,16 @@ function NewCamp() {
           </Popover>
         </FormField>
 
+        {error && (
+          <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">{error}</p>
+        )}
+
         <button
           type="submit"
-          disabled={!city || !chapter || !date}
-          className="w-full h-12 rounded-lg bg-primary text-primary-foreground font-semibold disabled:opacity-40 hover:opacity-90 transition"
+          disabled={!city || !chapter || !date || saving}
+          className="w-full h-12 rounded-lg bg-primary text-primary-foreground font-semibold disabled:opacity-40 hover:opacity-90 transition flex items-center justify-center gap-2"
         >
-          Create Session
+          {saving ? <><Loader2 className="h-4 w-4 animate-spin" /> Creating…</> : "Create Session"}
         </button>
       </form>
     </div>
@@ -88,7 +108,7 @@ function FormField({ label, children }: { label: string; children: React.ReactNo
   );
 }
 
-function Confirmation({ data, onReset }: { data: { city: string; chapter: string; date: Date; id: string; link: string }; onReset: () => void }) {
+function Confirmation({ data, onReset }: { data: { session: CampSession; link: string }; onReset: () => void }) {
   const [qr, setQr] = useState<string>("");
   const [copied, setCopied] = useState(false);
 
@@ -106,7 +126,7 @@ function Confirmation({ data, onReset }: { data: { city: string; chapter: string
   };
 
   const share = () => {
-    const text = `Join the MAD Care Camp — ${data.city} (${data.chapter}) on ${format(data.date, "PPP")}: ${data.link}`;
+    const text = `Join the MAD Care Camp — ${data.session.city} (${data.session.chapter}) on ${new Date(data.session.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}: ${data.link}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
 
@@ -121,15 +141,17 @@ function Confirmation({ data, onReset }: { data: { city: string; chapter: string
           <Check className="h-5 w-5" /> Session created
         </div>
 
-        <h1 className="text-2xl font-bold text-foreground">{data.city} — {data.chapter}</h1>
-        <p className="text-muted-foreground text-sm mt-1">{format(data.date, "PPPP")}</p>
+        <h1 className="text-2xl font-bold text-foreground">{data.session.city} — {data.session.chapter}</h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          {new Date(data.session.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
+        </p>
 
         <div className="my-8 flex flex-col items-center">
           <div className="w-56 h-56 rounded-xl bg-secondary border border-border flex items-center justify-center overflow-hidden">
             {qr ? (
               <img src={qr} alt="Session QR code" className="w-full h-full object-contain" />
             ) : (
-              <span className="text-xs text-muted-foreground font-semibold">QR Code</span>
+              <span className="text-xs text-muted-foreground font-semibold">Generating QR…</span>
             )}
           </div>
           <p className="text-sm text-muted-foreground text-center mt-4 max-w-xs">

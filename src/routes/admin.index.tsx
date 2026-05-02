@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Plus, Users, Sparkles, Calendar, MapPin } from "lucide-react";
-import { SESSIONS, sessionLabel, totals } from "@/lib/admin-data";
+import { getSessions, type CampSession } from "@/lib/api";
 
 export const Route = createFileRoute("/admin/")({
   component: Dashboard,
@@ -28,17 +28,32 @@ function Stat({ label, value, icon: Icon }: { label: string; value: number; icon
 }
 
 function Dashboard() {
-  const t = totals();
+  const [sessions, setSessions] = useState<CampSession[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [city, setCity] = useState("all");
   const [chapter, setChapter] = useState("all");
 
-  const cities = useMemo(() => Array.from(new Set(SESSIONS.map((s) => s.city))).sort(), []);
+  useEffect(() => {
+    getSessions()
+      .then(setSessions)
+      .catch((e) => setError(e.message ?? "Failed to load sessions"))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const totals = useMemo(() => ({
+    camps: sessions.length,
+    parents: sessions.reduce((a, s) => a + s.parent_count, 0),
+    cards: sessions.reduce((a, s) => a + s.card_count, 0),
+  }), [sessions]);
+
+  const cities = useMemo(() => Array.from(new Set(sessions.map((s) => s.city))).sort(), [sessions]);
   const chapters = useMemo(
-    () => Array.from(new Set(SESSIONS.filter((s) => city === "all" || s.city === city).map((s) => s.chapter))).sort(),
-    [city]
+    () => Array.from(new Set(sessions.filter((s) => city === "all" || s.city === city).map((s) => s.chapter))).sort(),
+    [city, sessions]
   );
 
-  const filtered = SESSIONS.filter(
+  const filtered = sessions.filter(
     (s) => (city === "all" || s.city === city) && (chapter === "all" || s.chapter === chapter)
   );
 
@@ -58,9 +73,9 @@ function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <Stat label="Total Camps Run" value={t.camps} icon={Calendar} />
-        <Stat label="Parents Registered" value={t.parents} icon={Users} />
-        <Stat label="Dream Cards Generated" value={t.cards} icon={Sparkles} />
+        <Stat label="Total Camps Run" value={totals.camps} icon={Calendar} />
+        <Stat label="Parents Registered" value={totals.parents} icon={Users} />
+        <Stat label="Dream Cards Generated" value={totals.cards} icon={Sparkles} />
       </div>
 
       <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -86,8 +101,14 @@ function Dashboard() {
           </select>
         </div>
 
-        {filtered.length === 0 ? (
-          <div className="px-5 py-10 text-center text-sm text-muted-foreground">No sessions match these filters.</div>
+        {loading ? (
+          <div className="px-5 py-10 text-center text-sm text-muted-foreground">Loading sessions…</div>
+        ) : error ? (
+          <div className="px-5 py-10 text-center text-sm text-destructive">{error}</div>
+        ) : filtered.length === 0 ? (
+          <div className="px-5 py-10 text-center text-sm text-muted-foreground">
+            {sessions.length === 0 ? "No camp sessions yet. Create one to get started." : "No sessions match these filters."}
+          </div>
         ) : (
           <>
             {/* Mobile: stacked cards. Tablet: 2-col grid. */}
@@ -107,11 +128,11 @@ function Dashboard() {
                   </div>
                   <div className="flex items-center gap-5 mt-4 pt-3 border-t border-border">
                     <div>
-                      <div className="font-bold tabular-nums text-foreground">{s.parents}</div>
+                      <div className="font-bold tabular-nums text-foreground">{s.parent_count}</div>
                       <div className="text-xs text-muted-foreground">Parents</div>
                     </div>
                     <div>
-                      <div className="font-bold tabular-nums text-foreground">{s.cards}</div>
+                      <div className="font-bold tabular-nums text-foreground">{s.card_count}</div>
                       <div className="text-xs text-muted-foreground">Cards</div>
                     </div>
                     <span className="ml-auto inline-flex items-center gap-1 text-primary font-semibold text-sm">
@@ -147,8 +168,8 @@ function Dashboard() {
                       <td className="px-5 py-3 text-muted-foreground tabular-nums">
                         {new Date(s.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                       </td>
-                      <td className="px-5 py-3 text-right font-bold tabular-nums">{s.parents}</td>
-                      <td className="px-5 py-3 text-right font-bold tabular-nums">{s.cards}</td>
+                      <td className="px-5 py-3 text-right font-bold tabular-nums">{s.parent_count}</td>
+                      <td className="px-5 py-3 text-right font-bold tabular-nums">{s.card_count}</td>
                       <td className="px-5 py-3 text-right">
                         <Link
                           to="/admin/sessions/$sessionId"

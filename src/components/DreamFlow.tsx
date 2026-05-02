@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Download, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Download, Sparkles, Loader2 } from "lucide-react";
 import madLogo from "@/assets/mad-logo.png";
 import dreamCard from "@/assets/dream-card.jpg";
+import { registerParentAndChild } from "@/lib/api";
 
 type Step =
+  | "no-session"
   | "welcome"
   | "parent"
   | "child"
@@ -30,7 +32,7 @@ type FormData = {
 };
 
 const EMPTY: FormData = {
-  parentName: "", phone: "", city: "Pune", area: "",
+  parentName: "", phone: "", city: "", area: "",
   childName: "", q1: "", q2: "", q3: "", q4: "", q5: "",
 };
 
@@ -74,9 +76,10 @@ function Header({ onBack, progress }: { onBack?: () => void; progress?: { curren
   );
 }
 
-function PrimaryButton({ children, disabled, onClick, variant = "primary" }: {
+function PrimaryButton({ children, disabled, onClick, variant = "primary", type = "button" }: {
   children: React.ReactNode; disabled?: boolean; onClick?: () => void;
   variant?: "primary" | "whatsapp" | "outline";
+  type?: "button" | "submit";
 }) {
   const base = "w-full h-14 rounded-2xl font-semibold text-base flex items-center justify-center gap-2 transition active:scale-[0.98] disabled:opacity-40 disabled:active:scale-100";
   const styles = {
@@ -85,7 +88,7 @@ function PrimaryButton({ children, disabled, onClick, variant = "primary" }: {
     outline: "border-2 border-primary/30 text-primary bg-transparent",
   }[variant];
   return (
-    <button onClick={onClick} disabled={disabled} className={`${base} ${styles}`}>
+    <button type={type} onClick={onClick} disabled={disabled} className={`${base} ${styles}`}>
       {children}
     </button>
   );
@@ -110,16 +113,40 @@ function Field({ label, value, onChange, placeholder, type = "text", autoFocus }
   );
 }
 
-export function DreamFlow() {
-  const [step, setStep] = useState<Step>("welcome");
+export function DreamFlow({ sessionId }: { sessionId?: string }) {
+  const [step, setStep] = useState<Step>(sessionId ? "welcome" : "no-session");
   const [data, setData] = useState<FormData>(EMPTY);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const idx = ORDER.indexOf(step);
   const go = (s: Step) => setStep(s);
-  const next = () => setStep(ORDER[Math.min(idx + 1, ORDER.length - 1)]);
   const back = () => setStep(ORDER[Math.max(idx - 1, 0)]);
 
-  // Loading auto-advance
+  // Save to Supabase when all questions are answered and we enter loading
+  const submitAndAdvance = async () => {
+    if (!sessionId) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await registerParentAndChild({
+        sessionId,
+        parentName: data.parentName,
+        phone: data.phone,
+        city: data.city,
+        area: data.area,
+        childName: data.childName,
+        answers: [data.q1, data.q2, data.q3, data.q4, data.q5],
+      });
+      go("loading");
+    } catch (err: unknown) {
+      setSaveError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Loading auto-advance to reveal
   useEffect(() => {
     if (step === "loading") {
       const t = setTimeout(() => setStep("reveal"), 3000);
@@ -130,7 +157,7 @@ export function DreamFlow() {
   const update = <K extends keyof FormData>(k: K, v: FormData[K]) =>
     setData((d) => ({ ...d, [k]: v }));
 
-  const showBack = step !== "welcome" && step !== "loading";
+  const showBack = step !== "welcome" && step !== "loading" && step !== "no-session";
   const qIndex = step.startsWith("q") ? Number(step.slice(1)) : 0;
   const progress = qIndex ? { current: qIndex, total: 5 } : undefined;
 
@@ -139,17 +166,19 @@ export function DreamFlow() {
       <Header onBack={showBack ? back : undefined} progress={progress} />
 
       <div className="flex-1 flex flex-col px-6 pb-8">
+        {step === "no-session" && <NoSession />}
+
         {step === "welcome" && <Welcome onStart={() => go("parent")} />}
 
         {step === "parent" && (
           <ScreenForm
             heading="First, a little about you"
             canContinue={!!(data.parentName && data.phone && data.area)}
-            onContinue={next}
+            onContinue={() => go("child")}
           >
             <Field label="Full Name" value={data.parentName} onChange={(v) => update("parentName", v)} placeholder="Your name" autoFocus />
             <Field label="Phone Number" value={data.phone} onChange={(v) => update("phone", v)} placeholder="10-digit mobile" type="tel" />
-            <Field label="City" value={data.city} onChange={(v) => update("city", v)} />
+            <Field label="City" value={data.city} onChange={(v) => update("city", v)} placeholder="e.g. Pune" />
             <Field label="Neighbourhood / Area" value={data.area} onChange={(v) => update("area", v)} placeholder="e.g. Koregaon Park, Baner" />
           </ScreenForm>
         )}
@@ -158,25 +187,28 @@ export function DreamFlow() {
           <ScreenForm
             heading="Now, tell us about your child"
             canContinue={!!data.childName}
-            onContinue={next}
+            onContinue={() => go("q1")}
           >
             <Field label="Child's First Name" value={data.childName} onChange={(v) => update("childName", v)} placeholder="Their name" autoFocus />
           </ScreenForm>
         )}
 
-        {QUESTIONS.map((q, i) =>
-          step === q.key ? (
+        {QUESTIONS.map((q, i) => {
+          const isLast = i === QUESTIONS.length - 1;
+          return step === q.key ? (
             <Question
               key={q.key}
               heading={q.label}
               hint={q.hint}
               value={data[q.key as keyof FormData] as string}
               onChange={(v) => update(q.key as keyof FormData, v)}
-              onNext={next}
-              isLast={i === QUESTIONS.length - 1}
+              onNext={isLast ? submitAndAdvance : () => go(QUESTIONS[i + 1].key as Step)}
+              isLast={isLast}
+              saving={isLast ? saving : false}
+              error={isLast ? saveError : null}
             />
-          ) : null
-        )}
+          ) : null;
+        })}
 
         {step === "loading" && <Loading childName={data.childName || "your child"} />}
 
@@ -185,7 +217,7 @@ export function DreamFlow() {
             childName={data.childName || "Your child"}
             dream={data.q1 || "something wonderful"}
             problem={data.q3 || "the world"}
-            onSent={() => go("next")}
+            onNext={() => go("next")}
           />
         )}
 
@@ -193,12 +225,26 @@ export function DreamFlow() {
           <NextChild
             childName={data.childName || "Your child"}
             onNext={() => {
-              setData({ ...EMPTY, parentName: data.parentName, phone: data.phone, city: data.city, area: data.area });
+              // Keep session context but reset all form data
+              setData({ ...EMPTY });
+              setSaveError(null);
               go("parent");
             }}
           />
         )}
       </div>
+    </div>
+  );
+}
+
+function NoSession() {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
+      <Logo className="h-14 mb-10" />
+      <h1 className="text-2xl font-bold text-foreground">Invalid link</h1>
+      <p className="mt-3 text-base text-muted-foreground max-w-[280px]">
+        This link is not connected to a valid camp session. Please ask your volunteer for the correct link.
+      </p>
     </div>
   );
 }
@@ -241,7 +287,7 @@ function ScreenForm({ heading, children, canContinue, onContinue }: {
       <div className="space-y-5">{children}</div>
       <div className="flex-1" />
       <div className="pt-8">
-        <PrimaryButton disabled={!canContinue}>
+        <PrimaryButton type="submit" disabled={!canContinue}>
           Continue <ArrowRight className="h-5 w-5" />
         </PrimaryButton>
       </div>
@@ -249,12 +295,13 @@ function ScreenForm({ heading, children, canContinue, onContinue }: {
   );
 }
 
-function Question({ heading, hint, value, onChange, onNext, isLast }: {
-  heading: string; hint: string; value: string; onChange: (v: string) => void; onNext: () => void; isLast: boolean;
+function Question({ heading, hint, value, onChange, onNext, isLast, saving, error }: {
+  heading: string; hint: string; value: string; onChange: (v: string) => void;
+  onNext: () => void; isLast: boolean; saving?: boolean; error?: string | null;
 }) {
   return (
     <form
-      onSubmit={(e) => { e.preventDefault(); if (value.trim()) onNext(); }}
+      onSubmit={(e) => { e.preventDefault(); if (value.trim() && !saving) onNext(); }}
       className="flex-1 flex flex-col pt-4"
     >
       <h2 className="text-3xl font-bold leading-tight">{heading}</h2>
@@ -268,10 +315,17 @@ function Question({ heading, hint, value, onChange, onNext, isLast }: {
           className="w-full h-16 px-5 rounded-2xl bg-input border-2 border-transparent focus:border-primary focus:bg-card outline-none text-xl transition placeholder:text-muted-foreground/60"
         />
       </div>
+      {error && (
+        <p className="mt-3 text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">{error}</p>
+      )}
       <div className="flex-1" />
       <div className="pt-8">
-        <PrimaryButton disabled={!value.trim()}>
-          {isLast ? "Create My Card" : "Next"} <ArrowRight className="h-5 w-5" />
+        <PrimaryButton type="submit" disabled={!value.trim() || !!saving}>
+          {saving ? (
+            <><Loader2 className="h-5 w-5 animate-spin" /> Saving…</>
+          ) : (
+            <>{isLast ? "Create My Card" : "Next"} <ArrowRight className="h-5 w-5" /></>
+          )}
         </PrimaryButton>
       </div>
     </form>
@@ -295,10 +349,20 @@ function Loading({ childName }: { childName: string }) {
   );
 }
 
-function Reveal({ childName, dream, problem, onSent }: {
-  childName: string; dream: string; problem: string; onSent: () => void;
+function Reveal({ childName, dream, problem, onNext }: {
+  childName: string; dream: string; problem: string; onNext: () => void;
 }) {
-  const caption = `${childName} dreams of becoming a ${dream.toLowerCase()} and making ${problem.toLowerCase()} better.`;
+  const caption = dream && problem
+    ? `${childName} dreams of becoming a ${dream.toLowerCase()} and making ${problem.toLowerCase()} better.`
+    : `${childName} dreams of becoming a ${(dream || "changemaker").toLowerCase()}.`;
+
+  const handleDownload = () => {
+    const a = document.createElement("a");
+    a.href = dreamCard;
+    a.download = `${childName}-dream-card.jpg`;
+    a.click();
+  };
+
   return (
     <div className="flex flex-col">
       <h2 className="text-2xl font-bold mb-4 text-center">{childName}'s Dream Card</h2>
@@ -322,18 +386,20 @@ function Reveal({ childName, dream, problem, onSent }: {
       </div>
 
       <div className="mt-6 space-y-3">
-        <PrimaryButton variant="whatsapp" onClick={onSent}>
-          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.7.1-.2.3-.7.9-.9 1.1-.2.2-.3.2-.6.1-1.7-.9-2.9-1.6-4-3.5-.3-.5.3-.5.8-1.5.1-.2 0-.4 0-.5s-.7-1.6-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4s-1.1 1.1-1.1 2.6 1.1 3 1.3 3.2c.1.2 2.2 3.4 5.4 4.7 2 .8 2.8.9 3.8.8.6-.1 1.7-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.3zM12 2C6.5 2 2 6.5 2 12c0 1.9.5 3.6 1.5 5.2L2 22l4.9-1.5C8.4 21.5 10.1 22 12 22c5.5 0 10-4.5 10-10S17.5 2 12 2z"/></svg>
-          Send to WhatsApp
-        </PrimaryButton>
-        <PrimaryButton variant="outline">
+        <PrimaryButton variant="outline" onClick={handleDownload}>
           <Download className="h-5 w-5" /> Download Card
         </PrimaryButton>
       </div>
 
-      <p className="text-center text-sm text-muted-foreground mt-5 px-4">
-        Check your WhatsApp — your card is on its way! 🎉
+      <p className="text-center text-sm text-muted-foreground mt-4 px-4">
+        Save or screenshot this card to share with your family! 🌟
       </p>
+
+      <div className="mt-5">
+        <PrimaryButton onClick={onNext}>
+          Next Child <ArrowRight className="h-5 w-5" />
+        </PrimaryButton>
+      </div>
     </div>
   );
 }
@@ -348,7 +414,7 @@ function NextChild({ childName, onNext }: { childName: string; onNext: () => voi
         </div>
       </div>
       <h2 className="text-3xl font-bold leading-tight max-w-[320px]">
-        Card sent! <span className="text-primary">{childName}</span>'s dream is on its way.
+        Done! <span className="text-primary">{childName}</span>'s card is ready.
       </h2>
       <p className="mt-4 text-base text-muted-foreground">
         Thank you for being part of this moment.
