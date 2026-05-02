@@ -2,6 +2,21 @@
 
 ---
 
+## 2026-05-02 — Session 2: Closeout + Phase 4 planning
+
+**Accomplishments**
+- Discovered all Phase 1-3 work was uncommitted — committed, fixed git credentials, pushed to GitHub
+- Ran full audit: extracted `toSession()` helper (DRY fix), fixed CardYesNo inconsistency, fixed empty catch block, auto-fixed prettier across all files
+- Ran kaizen: 5 SDLC rules added to CLAUDE.md (commit discipline, worktree .env check, mapper DRY, component consistency, credentials pre-flight)
+- Ran closeout: created PROJECT_HISTORY.md, docs/BUGS.md, updated CLAUDE.md build status and session startup checklist
+- Designed Phase 4 plan (AI image generation via DALL-E 3 + TanStack Start server function) — waiting on OpenAI API key to build
+
+**Stopped because:** No OpenAI or Replicate API key available. Resume when key is ready.
+
+**Resume instructions:** Read CLAUDE.md — Phase 4 plan is fully written there. Just need the API key.
+
+---
+
 ## 2026-05-02 — Phases 1–3: Supabase backend + full frontend wiring
 
 **Accomplishments**

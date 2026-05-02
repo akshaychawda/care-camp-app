@@ -51,9 +51,30 @@ npm run lint     # eslint
 | Frontend wired to real data | ✅ Phase 3 — done |
 | QR code generation | ✅ Phase 3 — done |
 | "Next child" session reset | ✅ Phase 3 — done |
-| AI image generation | Deferred — Phase 4 (needs API key) |
+| Cloudflare deployment | ⬜ Not yet deployed — run `npm run deploy` |
+| AI image generation | ⬜ Phase 4 — ready to build (needs OpenAI or Replicate API key) |
 | WhatsApp delivery | Deferred — Phase 5 (needs Twilio setup) |
 | AWS migration | Deferred — Phase 6 |
+
+## Current state (as of 2026-05-02)
+- All code committed and pushed to GitHub: https://github.com/akshaychawda/care-camp-app
+- App tested locally and working end-to-end
+- **Next action:** Get an OpenAI API key (platform.openai.com) or Replicate key (replicate.com), then build Phase 4
+- Phase 4 plan is fully designed — see below
+
+## Phase 4 — ready to build (waiting on API key)
+
+**What it does:** Generates a real AI image of the child's dream using their 5 answers, stores the URL in Supabase, shows it on the card reveal screen.
+
+**Steps (already designed):**
+1. Run in Supabase SQL Editor: `ALTER TABLE parent_registrations ADD COLUMN image_url TEXT;`
+2. Add `OPENAI_API_KEY=sk-...` to `.env` and `.dev.vars`
+3. Create `src/lib/generate-image.server.ts` — TanStack Start server function that calls DALL-E 3
+4. Update `markCardGenerated()` in `src/lib/api.ts` to also store `image_url`
+5. Update `DreamFlow.tsx` loading step to call server function, pass image URL to reveal screen
+6. Replace placeholder `dreamCard` image with real generated image
+
+**API choice:** DALL-E 3 (OpenAI) recommended — ~$0.04/image, best prompt following. Replicate (FLUX) is alternative at ~$0.003/image.
 
 ---
 
@@ -84,11 +105,12 @@ Voice input, languages other than English, DPDP consent, structured child data s
 ## Session startup
 1. Read this file
 2. Read `docs/prd.md`
-3. Check `docs/` for any plan files
-4. If working in a worktree, verify `.env` exists in the worktree directory. If missing: `cp <project-root>/.env .env`
-5. Run `git status` — if uncommitted changes exist on `main`, commit or stash before starting new work
-6. Run `npm run build` to confirm codebase compiles before starting new work
-7. Ask: build, audit, kaizen, or something else?
+3. Read `PROJECT_HISTORY.md` — orient on what's done
+4. Read `docs/BUGS.md` — check active debt
+5. If working in a worktree, verify `.env` exists in the worktree directory. If missing: `cp <project-root>/.env .env`
+6. Run `git status` — if uncommitted changes exist on `main`, commit or stash before starting new work
+7. Run `npm run build` to confirm codebase compiles before starting new work
+8. Tell user: current phase, what's done, what's next — then ask how to proceed
 
 ---
 
