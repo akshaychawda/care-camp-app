@@ -86,45 +86,85 @@ function Dashboard() {
           </select>
         </div>
 
-        <div className="divide-y divide-border">
-          {filtered.length === 0 && (
-            <div className="px-5 py-10 text-center text-sm text-muted-foreground">No sessions match these filters.</div>
-          )}
-          {filtered.map((s) => (
-            <Link
-              key={s.id}
-              to="/admin/sessions/$sessionId"
-              params={{ sessionId: s.id }}
-              className="block px-5 py-4 hover:bg-secondary/40 transition group"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="font-semibold text-foreground">{sessionLabel(s)}</div>
+        {filtered.length === 0 ? (
+          <div className="px-5 py-10 text-center text-sm text-muted-foreground">No sessions match these filters.</div>
+        ) : (
+          <>
+            {/* Mobile: stacked cards. Tablet: 2-col grid. */}
+            <div className="lg:hidden grid grid-cols-1 md:grid-cols-2 gap-3 p-3">
+              {filtered.map((s) => (
+                <Link
+                  key={s.id}
+                  to="/admin/sessions/$sessionId"
+                  params={{ sessionId: s.id }}
+                  className="block p-4 rounded-lg border border-border bg-background hover:bg-secondary/40 transition"
+                >
+                  <div className="font-semibold text-foreground">{s.city} — {s.chapter}</div>
                   <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <Tag icon={<MapPin className="h-3 w-3" />}>{s.city}</Tag>
-                    <Tag>{s.chapter}</Tag>
                     <Tag icon={<Calendar className="h-3 w-3" />}>
                       {new Date(s.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                     </Tag>
                   </div>
-                </div>
-                <div className="flex items-center gap-5 text-sm">
-                  <div className="text-right">
-                    <div className="font-bold tabular-nums text-foreground">{s.parents}</div>
-                    <div className="text-xs text-muted-foreground">Parents</div>
+                  <div className="flex items-center gap-5 mt-4 pt-3 border-t border-border">
+                    <div>
+                      <div className="font-bold tabular-nums text-foreground">{s.parents}</div>
+                      <div className="text-xs text-muted-foreground">Parents</div>
+                    </div>
+                    <div>
+                      <div className="font-bold tabular-nums text-foreground">{s.cards}</div>
+                      <div className="text-xs text-muted-foreground">Cards</div>
+                    </div>
+                    <span className="ml-auto inline-flex items-center gap-1 text-primary font-semibold text-sm">
+                      View <ArrowRight className="h-4 w-4" />
+                    </span>
                   </div>
-                  <div className="text-right">
-                    <div className="font-bold tabular-nums text-foreground">{s.cards}</div>
-                    <div className="text-xs text-muted-foreground">Cards</div>
-                  </div>
-                  <span className="hidden sm:inline-flex items-center gap-1 text-primary font-semibold text-sm group-hover:gap-2 transition-all">
-                    View Details <ArrowRight className="h-4 w-4" />
-                  </span>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+                </Link>
+              ))}
+            </div>
+
+            {/* Desktop: full table */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-secondary/60 text-xs uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="text-left font-semibold px-5 py-3">Camp</th>
+                    <th className="text-left font-semibold px-5 py-3">City</th>
+                    <th className="text-left font-semibold px-5 py-3">Chapter</th>
+                    <th className="text-left font-semibold px-5 py-3">Date</th>
+                    <th className="text-right font-semibold px-5 py-3">Parents</th>
+                    <th className="text-right font-semibold px-5 py-3">Cards</th>
+                    <th className="text-right font-semibold px-5 py-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {filtered.map((s) => (
+                    <tr key={s.id} className="hover:bg-secondary/30 group">
+                      <td className="px-5 py-3 font-semibold text-foreground">{s.city} — {s.chapter}</td>
+                      <td className="px-5 py-3 text-muted-foreground">
+                        <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{s.city}</span>
+                      </td>
+                      <td className="px-5 py-3 text-muted-foreground">{s.chapter}</td>
+                      <td className="px-5 py-3 text-muted-foreground tabular-nums">
+                        {new Date(s.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                      </td>
+                      <td className="px-5 py-3 text-right font-bold tabular-nums">{s.parents}</td>
+                      <td className="px-5 py-3 text-right font-bold tabular-nums">{s.cards}</td>
+                      <td className="px-5 py-3 text-right">
+                        <Link
+                          to="/admin/sessions/$sessionId"
+                          params={{ sessionId: s.id }}
+                          className="inline-flex items-center gap-1 text-primary font-semibold group-hover:gap-2 transition-all"
+                        >
+                          View <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

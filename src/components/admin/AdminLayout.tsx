@@ -12,43 +12,44 @@ export function AdminLayout() {
 
   return (
     <div className="admin min-h-screen w-full flex flex-col md:flex-row">
-      {/* Sidebar (desktop) */}
-      <aside className="hidden md:flex md:w-64 flex-col bg-sidebar text-sidebar-foreground">
-        <div className="px-6 py-6 border-b border-sidebar-border flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-sidebar-primary flex items-center justify-center">
+      {/* Sidebar — icon-only on tablet (md), full on desktop (lg+) */}
+      <aside className="hidden md:flex md:w-16 lg:w-56 flex-col bg-sidebar text-sidebar-foreground shrink-0 transition-all">
+        <div className="px-3 lg:px-5 py-5 border-b border-sidebar-border flex items-center gap-3 lg:justify-start justify-center">
+          <div className="h-10 w-10 rounded-xl bg-sidebar-primary flex items-center justify-center shrink-0">
             <img src={madLogo} alt="MAD" className="h-6 w-auto" />
           </div>
-          <div>
+          <div className="hidden lg:block min-w-0">
             <div className="font-bold text-sm">MAD Admin</div>
             <div className="text-xs text-sidebar-foreground/60">Care Camps</div>
           </div>
         </div>
-        <nav className="flex-1 p-3 space-y-1">
+        <nav className="flex-1 p-2 lg:p-3 space-y-1">
           {NAV.map((item) => {
             const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
             return (
               <Link
                 key={item.to}
                 to={item.to}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
+                title={item.label}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition lg:justify-start justify-center ${
                   active
                     ? "bg-sidebar-primary text-sidebar-primary-foreground"
                     : "text-sidebar-foreground/80 hover:bg-sidebar-accent"
                 }`}
               >
-                <item.icon className="h-4 w-4" />
-                {item.label}
+                <item.icon className="h-5 w-5 shrink-0" />
+                <span className="hidden lg:inline">{item.label}</span>
               </Link>
             );
           })}
         </nav>
-        <div className="p-4 text-xs text-sidebar-foreground/50 border-t border-sidebar-border">
+        <div className="hidden lg:block p-4 text-xs text-sidebar-foreground/50 border-t border-sidebar-border">
           v1.0 · Internal use
         </div>
       </aside>
 
       {/* Mobile top bar */}
-      <header className="md:hidden bg-sidebar text-sidebar-foreground px-5 py-4 flex items-center justify-between">
+      <header className="md:hidden bg-sidebar text-sidebar-foreground px-5 py-4 flex items-center justify-between sticky top-0 z-40">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-lg bg-sidebar-primary flex items-center justify-center">
             <img src={madLogo} alt="MAD" className="h-5 w-auto" />
@@ -69,7 +70,7 @@ export function AdminLayout() {
             <Link
               key={item.to}
               to={item.to}
-              className={`flex flex-col items-center justify-center py-3 gap-1 text-xs font-medium ${
+              className={`flex flex-col items-center justify-center py-3 gap-1 text-xs font-medium min-h-14 ${
                 active ? "text-sidebar-primary-foreground bg-sidebar-accent" : "text-sidebar-foreground/70"
               }`}
             >
