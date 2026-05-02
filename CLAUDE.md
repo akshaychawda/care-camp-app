@@ -28,7 +28,8 @@ Full PRD: `docs/prd.md` — read this before planning or building anything.
 - `src/routes/admin.index.tsx` — dashboard home (`/admin`)
 - `src/routes/admin.new.tsx` — create new camp session (`/admin/new`)
 - `src/routes/admin.sessions.$sessionId.tsx` — session detail (`/admin/sessions/:id`)
-- `src/lib/admin-data.ts` — mock types + data (replace with real DB calls)
+- `src/lib/supabase.ts` — Supabase client (reads from `.env`)
+- `src/lib/api.ts` — all database functions (createSession, getSessions, getSession, registerParentAndChild, markCardGenerated)
 
 ## Dev commands
 ```bash
@@ -43,13 +44,13 @@ npm run lint     # eslint
 ## Build status
 | Feature | Status |
 |---------|--------|
-| Parent/child UI flow | Built (Lovable) — UI only, no backend |
-| Admin dashboard UI | Built (Lovable) — UI only, mock data |
-| Database (sessions, registrations) | **To build — Phase 1** |
-| API layer | **To build — Phase 2** |
-| Frontend wired to real data | **To build — Phase 3** |
-| QR code generation | **To build — Phase 3** |
-| "Next child" session reset | **To build — Phase 3** |
+| Parent/child UI flow | ✅ Built + wired to Supabase |
+| Admin dashboard UI | ✅ Built + live data from Supabase |
+| Database (sessions, registrations) | ✅ Phase 1 — done |
+| API layer | ✅ Phase 2 — done |
+| Frontend wired to real data | ✅ Phase 3 — done |
+| QR code generation | ✅ Phase 3 — done |
+| "Next child" session reset | ✅ Phase 3 — done |
 | AI image generation | Deferred — Phase 4 (needs API key) |
 | WhatsApp delivery | Deferred — Phase 5 (needs Twilio setup) |
 | AWS migration | Deferred — Phase 6 |
@@ -84,4 +85,19 @@ Voice input, languages other than English, DPDP consent, structured child data s
 1. Read this file
 2. Read `docs/prd.md`
 3. Check `docs/` for any plan files
-4. Ask: build, audit, kaizen, or something else?
+4. If working in a worktree, verify `.env` exists in the worktree directory. If missing: `cp <project-root>/.env .env`
+5. Run `git status` — if uncommitted changes exist on `main`, commit or stash before starting new work
+6. Run `npm run build` to confirm codebase compiles before starting new work
+7. Ask: build, audit, kaizen, or something else?
+
+---
+
+## SDLC rules (learned from practice)
+
+**Commit after each phase.** Never leave a phase's work uncommitted. Untracked files are invisible to worktrees and future sessions.
+
+**Mapper/transformer DRY.** If the same type is constructed from raw DB rows in more than one place, extract a shared helper before closing out.
+
+**Component consistency.** If a component exists for a UI pattern, use it everywhere. Never inline its equivalent in the same codebase.
+
+**Credentials pre-flight before push.** Run `git push --dry-run origin main` before the real push. If it fails with 403, fix via macOS Keychain Access (search "github.com", delete stale entry).

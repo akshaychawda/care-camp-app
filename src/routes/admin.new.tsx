@@ -39,46 +39,76 @@ function NewCamp() {
     }
   };
 
-  if (created) return (
-    <Confirmation
-      data={created}
-      onReset={() => { setCreated(null); setCity(""); setChapter(""); setDate(undefined); }}
-    />
-  );
+  if (created)
+    return (
+      <Confirmation
+        data={created}
+        onReset={() => {
+          setCreated(null);
+          setCity("");
+          setChapter("");
+          setDate(undefined);
+        }}
+      />
+    );
 
   return (
     <div className="px-5 md:px-10 py-6 md:py-10 max-w-2xl">
-      <Link to="/admin" className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground mb-4">
+      <Link
+        to="/admin"
+        className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground mb-4"
+      >
         <ArrowLeft className="h-4 w-4" /> Back to Dashboard
       </Link>
 
       <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Create New Camp</h1>
-      <p className="text-sm text-muted-foreground mb-8">Set up a Care Camp session for your chapter.</p>
+      <p className="text-sm text-muted-foreground mb-8">
+        Set up a Care Camp session for your chapter.
+      </p>
 
       <form onSubmit={submit} className="bg-card border border-border rounded-xl p-6 space-y-5">
         <FormField label="City">
-          <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="e.g. Pune" required
-            className="w-full h-11 px-3 rounded-lg border border-border bg-input text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+          <input
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            placeholder="e.g. Pune"
+            required
+            className="w-full h-11 px-3 rounded-lg border border-border bg-input text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
         </FormField>
 
         <FormField label="Chapter">
-          <input value={chapter} onChange={(e) => setChapter(e.target.value)} placeholder="e.g. Deccan" required
-            className="w-full h-11 px-3 rounded-lg border border-border bg-input text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+          <input
+            value={chapter}
+            onChange={(e) => setChapter(e.target.value)}
+            placeholder="e.g. Deccan"
+            required
+            className="w-full h-11 px-3 rounded-lg border border-border bg-input text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
         </FormField>
 
         <FormField label="Date">
           <Popover>
             <PopoverTrigger asChild>
-              <button type="button" className={cn(
-                "w-full h-11 px-3 rounded-lg border border-border bg-input text-sm flex items-center justify-between text-left",
-                !date && "text-muted-foreground"
-              )}>
+              <button
+                type="button"
+                className={cn(
+                  "w-full h-11 px-3 rounded-lg border border-border bg-input text-sm flex items-center justify-between text-left",
+                  !date && "text-muted-foreground",
+                )}
+              >
                 {date ? format(date, "PPP") : "Pick a date"}
                 <CalendarIcon className="h-4 w-4 opacity-60" />
               </button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
-              <Calendar mode="single" selected={date} onSelect={setDate} initialFocus className={cn("p-3 pointer-events-auto")} />
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
             </PopoverContent>
           </Popover>
         </FormField>
@@ -92,7 +122,13 @@ function NewCamp() {
           disabled={!city || !chapter || !date || saving}
           className="w-full h-12 rounded-lg bg-primary text-primary-foreground font-semibold disabled:opacity-40 hover:opacity-90 transition flex items-center justify-center gap-2"
         >
-          {saving ? <><Loader2 className="h-4 w-4 animate-spin" /> Creating…</> : "Create Session"}
+          {saving ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" /> Creating…
+            </>
+          ) : (
+            "Create Session"
+          )}
         </button>
       </form>
     </div>
@@ -108,13 +144,24 @@ function FormField({ label, children }: { label: string; children: React.ReactNo
   );
 }
 
-function Confirmation({ data, onReset }: { data: { session: CampSession; link: string }; onReset: () => void }) {
+function Confirmation({
+  data,
+  onReset,
+}: {
+  data: { session: CampSession; link: string };
+  onReset: () => void;
+}) {
   const [qr, setQr] = useState<string>("");
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    QRCode.toDataURL(data.link, { width: 320, margin: 1, color: { dark: "#1a3a4a", light: "#ffffff" } })
-      .then(setQr).catch(() => setQr(""));
+    QRCode.toDataURL(data.link, {
+      width: 320,
+      margin: 1,
+      color: { dark: "#1a3a4a", light: "#ffffff" },
+    })
+      .then(setQr)
+      .catch(() => setQr(""));
   }, [data.link]);
 
   const copy = async () => {
@@ -122,7 +169,9 @@ function Confirmation({ data, onReset }: { data: { session: CampSession; link: s
       await navigator.clipboard.writeText(data.link);
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
-    } catch {}
+    } catch (_e) {
+      // clipboard API unavailable — user can copy manually from the link below
+    }
   };
 
   const share = () => {
@@ -132,7 +181,10 @@ function Confirmation({ data, onReset }: { data: { session: CampSession; link: s
 
   return (
     <div className="px-5 md:px-10 py-6 md:py-10 max-w-2xl">
-      <Link to="/admin" className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground mb-4">
+      <Link
+        to="/admin"
+        className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground mb-4"
+      >
         <ArrowLeft className="h-4 w-4" /> Back to Dashboard
       </Link>
 
@@ -141,9 +193,15 @@ function Confirmation({ data, onReset }: { data: { session: CampSession; link: s
           <Check className="h-5 w-5" /> Session created
         </div>
 
-        <h1 className="text-2xl font-bold text-foreground">{data.session.city} — {data.session.chapter}</h1>
+        <h1 className="text-2xl font-bold text-foreground">
+          {data.session.city} — {data.session.chapter}
+        </h1>
         <p className="text-muted-foreground text-sm mt-1">
-          {new Date(data.session.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
+          {new Date(data.session.date).toLocaleDateString("en-IN", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })}
         </p>
 
         <div className="my-8 flex flex-col items-center">
@@ -163,18 +221,25 @@ function Confirmation({ data, onReset }: { data: { session: CampSession; link: s
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button onClick={copy}
-            className="h-11 rounded-lg border-2 border-primary text-primary font-semibold flex items-center justify-center gap-2 hover:bg-primary/5 transition">
+          <button
+            onClick={copy}
+            className="h-11 rounded-lg border-2 border-primary text-primary font-semibold flex items-center justify-center gap-2 hover:bg-primary/5 transition"
+          >
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             {copied ? "Copied!" : "Copy Link"}
           </button>
-          <button onClick={share}
-            className="h-11 rounded-lg bg-whatsapp text-whatsapp-foreground font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition">
+          <button
+            onClick={share}
+            className="h-11 rounded-lg bg-whatsapp text-whatsapp-foreground font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition"
+          >
             <Share2 className="h-4 w-4" /> Share on WhatsApp
           </button>
         </div>
 
-        <button onClick={onReset} className="w-full mt-3 h-11 text-sm font-semibold text-muted-foreground hover:text-foreground">
+        <button
+          onClick={onReset}
+          className="w-full mt-3 h-11 text-sm font-semibold text-muted-foreground hover:text-foreground"
+        >
           Create another →
         </button>
       </div>

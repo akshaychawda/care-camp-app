@@ -9,7 +9,9 @@ export const Route = createFileRoute("/admin/sessions/$sessionId")({
     <div className="p-10 text-center">
       <h1 className="text-xl font-bold mb-2">Couldn't load session</h1>
       <p className="text-sm text-muted-foreground mb-4">{error.message}</p>
-      <Link to="/admin" className="text-primary font-semibold">← Back to dashboard</Link>
+      <Link to="/admin" className="text-primary font-semibold">
+        ← Back to dashboard
+      </Link>
     </div>
   ),
 });
@@ -17,7 +19,9 @@ export const Route = createFileRoute("/admin/sessions/$sessionId")({
 function StatBlock({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="bg-card border border-border rounded-lg px-4 py-3">
-      <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">{label}</div>
+      <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+        {label}
+      </div>
       <div className="text-lg font-bold text-foreground mt-1 tabular-nums">{value}</div>
     </div>
   );
@@ -52,23 +56,32 @@ function SessionDetail() {
       .finally(() => setLoading(false));
   }, [sessionId]);
 
-  if (loading) return (
-    <div className="p-10 text-center text-sm text-muted-foreground">Loading session…</div>
-  );
+  if (loading)
+    return <div className="p-10 text-center text-sm text-muted-foreground">Loading session…</div>;
 
-  if (error || !session) return (
-    <div className="p-10 text-center">
-      <h1 className="text-xl font-bold mb-2">Couldn't load session</h1>
-      <p className="text-sm text-muted-foreground mb-4">{error ?? "Session not found"}</p>
-      <Link to="/admin" className="text-primary font-semibold">← Back to dashboard</Link>
-    </div>
-  );
+  if (error || !session)
+    return (
+      <div className="p-10 text-center">
+        <h1 className="text-xl font-bold mb-2">Couldn't load session</h1>
+        <p className="text-sm text-muted-foreground mb-4">{error ?? "Session not found"}</p>
+        <Link to="/admin" className="text-primary font-semibold">
+          ← Back to dashboard
+        </Link>
+      </div>
+    );
 
-  const dateStr = new Date(session.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+  const dateStr = new Date(session.date).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 
   return (
     <div className="px-5 md:px-8 lg:px-10 py-6 md:py-10 max-w-7xl">
-      <Link to="/admin" className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground mb-4">
+      <Link
+        to="/admin"
+        className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground mb-4"
+      >
         <ArrowLeft className="h-4 w-4" /> Back to Dashboard
       </Link>
 
@@ -90,7 +103,9 @@ function SessionDetail() {
         <section className="md:col-span-2 bg-card border border-border rounded-xl overflow-hidden">
           <div className="px-5 py-4 border-b border-border">
             <h2 className="font-semibold text-foreground">Registrations</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">{registrations.length} registered</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {registrations.length} registered
+            </p>
           </div>
 
           {registrations.length === 0 ? (
@@ -106,7 +121,9 @@ function SessionDetail() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="font-semibold text-foreground">{r.name}</div>
-                        <div className="text-sm text-muted-foreground tabular-nums mt-0.5">{r.phone}</div>
+                        <div className="text-sm text-muted-foreground tabular-nums mt-0.5">
+                          {r.phone}
+                        </div>
                         <div className="text-sm text-muted-foreground mt-0.5">{r.area}</div>
                       </div>
                       <CardYesNo ok={r.card_generated} />
@@ -133,15 +150,7 @@ function SessionDetail() {
                         <td className="px-5 py-3 text-muted-foreground tabular-nums">{r.phone}</td>
                         <td className="px-5 py-3 text-muted-foreground">{r.area}</td>
                         <td className="px-5 py-3">
-                          {r.card_generated ? (
-                            <span className="inline-flex items-center gap-1.5 text-whatsapp font-semibold">
-                              <CheckCircle2 className="h-4 w-4" /> Yes
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                              <XCircle className="h-4 w-4" /> No
-                            </span>
-                          )}
+                          <CardYesNo ok={r.card_generated} />
                         </td>
                       </tr>
                     ))}
