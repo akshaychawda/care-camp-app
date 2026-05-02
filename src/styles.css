@@ -109,6 +109,41 @@
     font-family: var(--font-display);
     letter-spacing: -0.02em;
   }
+
+  /* Admin theme: deep teal/navy, clean white surface */
+  .admin {
+    --background: oklch(0.98 0.005 220);
+    --foreground: oklch(0.22 0.04 230);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.22 0.04 230);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.22 0.04 230);
+    --primary: oklch(0.38 0.07 200);
+    --primary-foreground: oklch(0.99 0.005 220);
+    --secondary: oklch(0.95 0.012 220);
+    --secondary-foreground: oklch(0.28 0.05 220);
+    --muted: oklch(0.96 0.008 220);
+    --muted-foreground: oklch(0.5 0.025 220);
+    --accent: oklch(0.92 0.03 195);
+    --accent-foreground: oklch(0.28 0.06 210);
+    --border: oklch(0.91 0.012 220);
+    --input: oklch(0.96 0.008 220);
+    --ring: oklch(0.38 0.07 200);
+    --sidebar: oklch(0.22 0.04 220);
+    --sidebar-foreground: oklch(0.95 0.01 220);
+    --sidebar-primary: oklch(0.55 0.1 195);
+    --sidebar-primary-foreground: oklch(0.99 0.005 220);
+    --sidebar-accent: oklch(0.28 0.045 220);
+    --sidebar-accent-foreground: oklch(0.95 0.01 220);
+    --sidebar-border: oklch(0.3 0.04 220);
+    --sidebar-ring: oklch(0.55 0.1 195);
+    background: oklch(0.98 0.005 220);
+  }
+
+  .admin h1, .admin h2, .admin h3 {
+    font-family: var(--font-sans);
+    letter-spacing: -0.015em;
+  }
 }
 
 @layer utilities {
