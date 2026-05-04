@@ -52,13 +52,18 @@ npm run lint     # eslint
 | QR code generation | ✅ Phase 3 — done |
 | "Next child" session reset | ✅ Phase 3 — done |
 | Cloudflare deployment | ⬜ Not yet deployed — run `npm run deploy` |
+| Camp open/close status + toggle | ✅ Phase 3.5 — done |
+| Camp closed screen (parent flow) | ✅ Phase 3.5 — done |
+| QR code on session detail | ✅ Phase 3.5 — done |
+| MAD design system (red, Inter, dark mode) | ✅ Phase 3.5 — done |
 | AI image generation | ⬜ Phase 4 — ready to build (needs OpenAI or Replicate API key) |
 | WhatsApp delivery | Deferred — Phase 5 (needs Twilio setup) |
 | AWS migration | Deferred — Phase 6 |
 
-## Current state (as of 2026-05-02)
+## Current state (as of 2026-05-04)
 - All code committed and pushed to GitHub: https://github.com/akshaychawda/care-camp-app
-- App tested locally and working end-to-end
+- Phase 3.5 complete: camp status toggle, QR on detail, closed-camp screen, MAD design system applied
+- App tested locally — all flows working, light + dark mode verified
 - **Next action:** Get an OpenAI API key (platform.openai.com) or Replicate key (replicate.com), then build Phase 4
 - Phase 4 plan is fully designed — see below
 

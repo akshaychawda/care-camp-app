@@ -153,9 +153,7 @@ function SessionDetail() {
       <div className="flex items-center gap-3 mb-6">
         <span
           className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-            isOpen
-              ? "bg-emerald-900/40 text-emerald-400"
-              : "bg-red-900/40 text-red-400"
+            isOpen ? "bg-emerald-900/40 text-emerald-400" : "bg-red-900/40 text-red-400"
           }`}
         >
           {isOpen ? "Open" : "Closed"}

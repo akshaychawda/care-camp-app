@@ -244,7 +244,8 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
   const update = <K extends keyof FormData>(k: K, v: FormData[K]) =>
     setData((d) => ({ ...d, [k]: v }));
 
-  const showBack = step !== "welcome" && step !== "loading" && step !== "no-session" && step !== "camp-closed";
+  const showBack =
+    step !== "welcome" && step !== "loading" && step !== "no-session" && step !== "camp-closed";
   const qIndex = step.startsWith("q") ? Number(step.slice(1)) : 0;
   const progress = qIndex ? { current: qIndex, total: 5 } : undefined;
 
@@ -375,8 +376,8 @@ function NoSession() {
       <Logo className="h-14 mb-10" />
       <h1 className="text-2xl font-bold text-foreground">Invalid link</h1>
       <p className="mt-3 text-base text-muted-foreground max-w-[280px]">
-        This link is not connected to a valid Care Camp. Please ask your volunteer for the
-        correct link.
+        This link is not connected to a valid Care Camp. Please ask your volunteer for the correct
+        link.
       </p>
     </div>
   );

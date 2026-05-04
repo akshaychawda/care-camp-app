@@ -133,9 +133,7 @@ function Dashboard() {
         </div>
 
         {loading ? (
-          <div className="px-5 py-10 text-center text-sm text-muted-foreground">
-            Loading camps…
-          </div>
+          <div className="px-5 py-10 text-center text-sm text-muted-foreground">Loading camps…</div>
         ) : error ? (
           <div className="px-5 py-10 text-center text-sm text-destructive">{error}</div>
         ) : filtered.length === 0 ? (

@@ -62,9 +62,7 @@ function NewCamp() {
       </Link>
 
       <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Create New Camp</h1>
-      <p className="text-sm text-muted-foreground mb-8">
-        Set up a Care Camp for your chapter.
-      </p>
+      <p className="text-sm text-muted-foreground mb-8">Set up a Care Camp for your chapter.</p>
 
       <form onSubmit={submit} className="bg-card border border-border rounded-xl p-6 space-y-5">
         <FormField label="City">

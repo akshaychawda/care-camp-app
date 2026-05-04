@@ -2,6 +2,29 @@
 
 ---
 
+## 2026-05-04 — Phase 3.5: Camp status, QR on detail, design system
+
+**Accomplishments**
+- Added `is_open` column to `camp_sessions` (Supabase migration)
+- Added `toggleCampStatus()` and `getCampStatus()` to API layer
+- Admin camp detail: Open/Closed badge + toggle button with optimistic update + rollback
+- Admin camp detail: QR code + copy link surfaced in stats sidebar (previously only on new-camp confirmation)
+- Parent flow: new `camp-closed` step — checks `is_open` on load, shows lock screen if camp is closed
+- Renamed "session" → "camp" in all user-visible UI labels
+- Established MAD design system: `docs/design-system.md` — red #C62828, yellow #F59E0B, teal #0D9488, Inter font
+- Applied MAD design tokens to the app: replaced warm-orange primary + Fraunces serif with MAD red + Inter
+- Switched dark mode from class-based (`.dark`) to system-responsive (`prefers-color-scheme`)
+- Created `.agent/gotchas.md` and `docs/lessons_learned.md`
+- Audit passed, kaizen done, all changes committed and pushed
+
+**Key learnings**
+- Apply design tokens before building UI — retheme at audit costs double the work
+- Dark mode tokens must be explicitly defined alongside light tokens
+- Grep all user-visible strings before a rename — missed one without it
+- Verify DB migration with SQL before writing dependent TypeScript
+
+---
+
 ## 2026-05-02 — Session 2: Closeout + Phase 4 planning
 
 **Accomplishments**

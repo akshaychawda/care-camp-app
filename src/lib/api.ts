@@ -28,7 +28,14 @@ export type Registration = {
 // ─── Camp Sessions ─────────────────────────────────────────────────────────────
 
 function toSession(
-  raw: { id: string; city: string; chapter: string; date: string; created_at: string; is_open: boolean },
+  raw: {
+    id: string;
+    city: string;
+    chapter: string;
+    date: string;
+    created_at: string;
+    is_open: boolean;
+  },
   regs: { card_generated: boolean }[],
 ): CampSession {
   return {
@@ -126,10 +133,7 @@ export async function markCardGenerated(registrationId: string): Promise<void> {
 }
 
 export async function toggleCampStatus(id: string, isOpen: boolean): Promise<void> {
-  const { error } = await supabase
-    .from("camp_sessions")
-    .update({ is_open: isOpen })
-    .eq("id", id);
+  const { error } = await supabase.from("camp_sessions").update({ is_open: isOpen }).eq("id", id);
   if (error) throw error;
 }
 
