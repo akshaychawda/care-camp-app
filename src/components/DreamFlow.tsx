@@ -2,23 +2,44 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Download, Sparkles, Loader2 } from "lucide-react";
 import madLogo from "@/assets/mad-logo.png";
 import dreamCard from "@/assets/dream-card.jpg";
-import { registerParentAndChild } from "@/lib/api";
+import { registerParentAndChild, getCampStatus } from "@/lib/api";
 
 type Step =
   | "no-session"
+  | "camp-closed"
   | "welcome"
   | "parent"
   | "child"
-  | "q1" | "q2" | "q3" | "q4" | "q5"
+  | "q1"
+  | "q2"
+  | "q3"
+  | "q4"
+  | "q5"
   | "loading"
   | "reveal"
   | "next";
 
 const QUESTIONS = [
-  { key: "q1", label: "What do you want to be when you grow up?", hint: "Doctor, cricketer, teacher, astronaut… anything!" },
-  { key: "q2", label: "What is your favourite subject or activity?", hint: "Maths, drawing, dancing, football…" },
-  { key: "q3", label: "What problem would you like to fix in the world?", hint: "Pollution, hunger, making people happy…" },
-  { key: "q4", label: "Who is someone you look up to?", hint: "A family member, a sports star, a character from a story…" },
+  {
+    key: "q1",
+    label: "What do you want to be when you grow up?",
+    hint: "Doctor, cricketer, teacher, astronaut… anything!",
+  },
+  {
+    key: "q2",
+    label: "What is your favourite subject or activity?",
+    hint: "Maths, drawing, dancing, football…",
+  },
+  {
+    key: "q3",
+    label: "What problem would you like to fix in the world?",
+    hint: "Pollution, hunger, making people happy…",
+  },
+  {
+    key: "q4",
+    label: "Who is someone you look up to?",
+    hint: "A family member, a sports star, a character from a story…",
+  },
   { key: "q5", label: "Describe yourself in one word.", hint: "Brave, curious, funny, kind…" },
 ] as const;
 
@@ -28,25 +49,57 @@ type FormData = {
   city: string;
   area: string;
   childName: string;
-  q1: string; q2: string; q3: string; q4: string; q5: string;
+  q1: string;
+  q2: string;
+  q3: string;
+  q4: string;
+  q5: string;
 };
 
 const EMPTY: FormData = {
-  parentName: "", phone: "", city: "", area: "",
-  childName: "", q1: "", q2: "", q3: "", q4: "", q5: "",
+  parentName: "",
+  phone: "",
+  city: "",
+  area: "",
+  childName: "",
+  q1: "",
+  q2: "",
+  q3: "",
+  q4: "",
+  q5: "",
 };
 
-const ORDER: Step[] = ["welcome", "parent", "child", "q1", "q2", "q3", "q4", "q5", "loading", "reveal", "next"];
+const ORDER: Step[] = [
+  "welcome",
+  "parent",
+  "child",
+  "q1",
+  "q2",
+  "q3",
+  "q4",
+  "q5",
+  "loading",
+  "reveal",
+  "next",
+];
 
 function Logo({ className = "" }: { className?: string }) {
   return (
-    <div className={`inline-flex items-center justify-center px-5 py-2 rounded-2xl bg-foreground ${className}`}>
+    <div
+      className={`inline-flex items-center justify-center px-5 py-2 rounded-2xl bg-foreground ${className}`}
+    >
       <img src={madLogo} alt="MAD — Make A Difference" className="h-8 w-auto" />
     </div>
   );
 }
 
-function Header({ onBack, progress }: { onBack?: () => void; progress?: { current: number; total: number } }) {
+function Header({
+  onBack,
+  progress,
+}: {
+  onBack?: () => void;
+  progress?: { current: number; total: number };
+}) {
   return (
     <div className="px-5 pt-5 pb-2 flex items-center gap-3 min-h-[64px]">
       {onBack ? (
@@ -57,7 +110,9 @@ function Header({ onBack, progress }: { onBack?: () => void; progress?: { curren
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-      ) : <div className="h-11 w-11" />}
+      ) : (
+        <div className="h-11 w-11" />
+      )}
       {progress ? (
         <div className="flex-1 flex items-center gap-3">
           <div className="flex-1 h-2 rounded-full bg-secondary overflow-hidden">
@@ -70,18 +125,29 @@ function Header({ onBack, progress }: { onBack?: () => void; progress?: { curren
             {progress.current} of {progress.total}
           </span>
         </div>
-      ) : <div className="flex-1" />}
+      ) : (
+        <div className="flex-1" />
+      )}
       <div className="h-11 w-11" />
     </div>
   );
 }
 
-function PrimaryButton({ children, disabled, onClick, variant = "primary", type = "button" }: {
-  children: React.ReactNode; disabled?: boolean; onClick?: () => void;
+function PrimaryButton({
+  children,
+  disabled,
+  onClick,
+  variant = "primary",
+  type = "button",
+}: {
+  children: React.ReactNode;
+  disabled?: boolean;
+  onClick?: () => void;
   variant?: "primary" | "whatsapp" | "outline";
   type?: "button" | "submit";
 }) {
-  const base = "w-full h-14 rounded-2xl font-semibold text-base flex items-center justify-center gap-2 transition active:scale-[0.98] disabled:opacity-40 disabled:active:scale-100";
+  const base =
+    "w-full h-14 rounded-2xl font-semibold text-base flex items-center justify-center gap-2 transition active:scale-[0.98] disabled:opacity-40 disabled:active:scale-100";
   const styles = {
     primary: "bg-gradient-warm text-primary-foreground shadow-warm",
     whatsapp: "bg-whatsapp text-whatsapp-foreground shadow-warm",
@@ -94,9 +160,20 @@ function PrimaryButton({ children, disabled, onClick, variant = "primary", type 
   );
 }
 
-function Field({ label, value, onChange, placeholder, type = "text", autoFocus }: {
-  label: string; value: string; onChange: (v: string) => void;
-  placeholder?: string; type?: string; autoFocus?: boolean;
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+  autoFocus,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: string;
+  autoFocus?: boolean;
 }) {
   return (
     <label className="block">
@@ -146,6 +223,16 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
     }
   };
 
+  // Check if camp is open; redirect to closed screen if not
+  useEffect(() => {
+    if (!sessionId) return;
+    getCampStatus(sessionId)
+      .then(({ is_open }) => {
+        if (!is_open) setStep("camp-closed");
+      })
+      .catch(() => {}); // silent — proceed normally if check fails
+  }, [sessionId]);
+
   // Loading auto-advance to reveal
   useEffect(() => {
     if (step === "loading") {
@@ -157,7 +244,7 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
   const update = <K extends keyof FormData>(k: K, v: FormData[K]) =>
     setData((d) => ({ ...d, [k]: v }));
 
-  const showBack = step !== "welcome" && step !== "loading" && step !== "no-session";
+  const showBack = step !== "welcome" && step !== "loading" && step !== "no-session" && step !== "camp-closed";
   const qIndex = step.startsWith("q") ? Number(step.slice(1)) : 0;
   const progress = qIndex ? { current: qIndex, total: 5 } : undefined;
 
@@ -168,6 +255,8 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
       <div className="flex-1 flex flex-col px-6 pb-8">
         {step === "no-session" && <NoSession />}
 
+        {step === "camp-closed" && <CampClosed />}
+
         {step === "welcome" && <Welcome onStart={() => go("parent")} />}
 
         {step === "parent" && (
@@ -176,10 +265,32 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
             canContinue={!!(data.parentName && data.phone && data.area)}
             onContinue={() => go("child")}
           >
-            <Field label="Full Name" value={data.parentName} onChange={(v) => update("parentName", v)} placeholder="Your name" autoFocus />
-            <Field label="Phone Number" value={data.phone} onChange={(v) => update("phone", v)} placeholder="10-digit mobile" type="tel" />
-            <Field label="City" value={data.city} onChange={(v) => update("city", v)} placeholder="e.g. Pune" />
-            <Field label="Neighbourhood / Area" value={data.area} onChange={(v) => update("area", v)} placeholder="e.g. Koregaon Park, Baner" />
+            <Field
+              label="Full Name"
+              value={data.parentName}
+              onChange={(v) => update("parentName", v)}
+              placeholder="Your name"
+              autoFocus
+            />
+            <Field
+              label="Phone Number"
+              value={data.phone}
+              onChange={(v) => update("phone", v)}
+              placeholder="10-digit mobile"
+              type="tel"
+            />
+            <Field
+              label="City"
+              value={data.city}
+              onChange={(v) => update("city", v)}
+              placeholder="e.g. Pune"
+            />
+            <Field
+              label="Neighbourhood / Area"
+              value={data.area}
+              onChange={(v) => update("area", v)}
+              placeholder="e.g. Koregaon Park, Baner"
+            />
           </ScreenForm>
         )}
 
@@ -189,7 +300,13 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
             canContinue={!!data.childName}
             onContinue={() => go("q1")}
           >
-            <Field label="Child's First Name" value={data.childName} onChange={(v) => update("childName", v)} placeholder="Their name" autoFocus />
+            <Field
+              label="Child's First Name"
+              value={data.childName}
+              onChange={(v) => update("childName", v)}
+              placeholder="Their name"
+              autoFocus
+            />
           </ScreenForm>
         )}
 
@@ -237,13 +354,29 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
   );
 }
 
+function CampClosed() {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center text-center px-8 py-12">
+      <Logo className="h-14 mb-12" />
+      <div className="w-28 h-28 rounded-full bg-destructive/10 flex items-center justify-center text-5xl mb-6">
+        🔒
+      </div>
+      <h2 className="text-2xl font-bold text-foreground mb-3">This camp has ended</h2>
+      <p className="text-base text-muted-foreground leading-relaxed max-w-xs">
+        Registration for this Care Camp is now closed. Thank you for your interest!
+      </p>
+    </div>
+  );
+}
+
 function NoSession() {
   return (
     <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
       <Logo className="h-14 mb-10" />
       <h1 className="text-2xl font-bold text-foreground">Invalid link</h1>
       <p className="mt-3 text-base text-muted-foreground max-w-[280px]">
-        This link is not connected to a valid camp session. Please ask your volunteer for the correct link.
+        This link is not connected to a valid camp session. Please ask your volunteer for the
+        correct link.
       </p>
     </div>
   );
@@ -275,12 +408,23 @@ function Welcome({ onStart }: { onStart: () => void }) {
   );
 }
 
-function ScreenForm({ heading, children, canContinue, onContinue }: {
-  heading: string; children: React.ReactNode; canContinue: boolean; onContinue: () => void;
+function ScreenForm({
+  heading,
+  children,
+  canContinue,
+  onContinue,
+}: {
+  heading: string;
+  children: React.ReactNode;
+  canContinue: boolean;
+  onContinue: () => void;
 }) {
   return (
     <form
-      onSubmit={(e) => { e.preventDefault(); if (canContinue) onContinue(); }}
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (canContinue) onContinue();
+      }}
       className="flex-1 flex flex-col"
     >
       <h1 className="text-3xl font-bold leading-tight mb-8 mt-2">{heading}</h1>
@@ -295,13 +439,31 @@ function ScreenForm({ heading, children, canContinue, onContinue }: {
   );
 }
 
-function Question({ heading, hint, value, onChange, onNext, isLast, saving, error }: {
-  heading: string; hint: string; value: string; onChange: (v: string) => void;
-  onNext: () => void; isLast: boolean; saving?: boolean; error?: string | null;
+function Question({
+  heading,
+  hint,
+  value,
+  onChange,
+  onNext,
+  isLast,
+  saving,
+  error,
+}: {
+  heading: string;
+  hint: string;
+  value: string;
+  onChange: (v: string) => void;
+  onNext: () => void;
+  isLast: boolean;
+  saving?: boolean;
+  error?: string | null;
 }) {
   return (
     <form
-      onSubmit={(e) => { e.preventDefault(); if (value.trim() && !saving) onNext(); }}
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (value.trim() && !saving) onNext();
+      }}
       className="flex-1 flex flex-col pt-4"
     >
       <h2 className="text-3xl font-bold leading-tight">{heading}</h2>
@@ -316,15 +478,21 @@ function Question({ heading, hint, value, onChange, onNext, isLast, saving, erro
         />
       </div>
       {error && (
-        <p className="mt-3 text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">{error}</p>
+        <p className="mt-3 text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">
+          {error}
+        </p>
       )}
       <div className="flex-1" />
       <div className="pt-8">
         <PrimaryButton type="submit" disabled={!value.trim() || !!saving}>
           {saving ? (
-            <><Loader2 className="h-5 w-5 animate-spin" /> Saving…</>
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" /> Saving…
+            </>
           ) : (
-            <>{isLast ? "Create My Card" : "Next"} <ArrowRight className="h-5 w-5" /></>
+            <>
+              {isLast ? "Create My Card" : "Next"} <ArrowRight className="h-5 w-5" />
+            </>
           )}
         </PrimaryButton>
       </div>
@@ -349,12 +517,21 @@ function Loading({ childName }: { childName: string }) {
   );
 }
 
-function Reveal({ childName, dream, problem, onNext }: {
-  childName: string; dream: string; problem: string; onNext: () => void;
+function Reveal({
+  childName,
+  dream,
+  problem,
+  onNext,
+}: {
+  childName: string;
+  dream: string;
+  problem: string;
+  onNext: () => void;
 }) {
-  const caption = dream && problem
-    ? `${childName} dreams of becoming a ${dream.toLowerCase()} and making ${problem.toLowerCase()} better.`
-    : `${childName} dreams of becoming a ${(dream || "changemaker").toLowerCase()}.`;
+  const caption =
+    dream && problem
+      ? `${childName} dreams of becoming a ${dream.toLowerCase()} and making ${problem.toLowerCase()} better.`
+      : `${childName} dreams of becoming a ${(dream || "changemaker").toLowerCase()}.`;
 
   const handleDownload = () => {
     const a = document.createElement("a");
@@ -379,9 +556,7 @@ function Reveal({ childName, dream, problem, onNext }: {
           <img src={madLogo} alt="MAD" className="h-6 w-auto object-contain" />
         </div>
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-5 pt-12">
-          <p className="font-display italic text-white text-lg leading-snug">
-            "{caption}"
-          </p>
+          <p className="font-display italic text-white text-lg leading-snug">"{caption}"</p>
         </div>
       </div>
 

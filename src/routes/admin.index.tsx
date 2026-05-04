@@ -13,16 +13,28 @@ export const Route = createFileRoute("/admin/")({
   }),
 });
 
-function Stat({ label, value, icon: Icon }: { label: string; value: number; icon: React.ElementType }) {
+function Stat({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: number;
+  icon: React.ElementType;
+}) {
   return (
     <div className="bg-card rounded-xl border border-border p-5">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          {label}
+        </span>
         <div className="h-9 w-9 rounded-lg bg-accent flex items-center justify-center">
           <Icon className="h-4 w-4 text-accent-foreground" />
         </div>
       </div>
-      <div className="text-3xl font-bold tabular-nums text-foreground">{value.toLocaleString("en-IN")}</div>
+      <div className="text-3xl font-bold tabular-nums text-foreground">
+        {value.toLocaleString("en-IN")}
+      </div>
     </div>
   );
 }
@@ -41,20 +53,26 @@ function Dashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  const totals = useMemo(() => ({
-    camps: sessions.length,
-    parents: sessions.reduce((a, s) => a + s.parent_count, 0),
-    cards: sessions.reduce((a, s) => a + s.card_count, 0),
-  }), [sessions]);
+  const totals = useMemo(
+    () => ({
+      camps: sessions.length,
+      parents: sessions.reduce((a, s) => a + s.parent_count, 0),
+      cards: sessions.reduce((a, s) => a + s.card_count, 0),
+    }),
+    [sessions],
+  );
 
   const cities = useMemo(() => Array.from(new Set(sessions.map((s) => s.city))).sort(), [sessions]);
   const chapters = useMemo(
-    () => Array.from(new Set(sessions.filter((s) => city === "all" || s.city === city).map((s) => s.chapter))).sort(),
-    [city, sessions]
+    () =>
+      Array.from(
+        new Set(sessions.filter((s) => city === "all" || s.city === city).map((s) => s.chapter)),
+      ).sort(),
+    [city, sessions],
   );
 
   const filtered = sessions.filter(
-    (s) => (city === "all" || s.city === city) && (chapter === "all" || s.chapter === chapter)
+    (s) => (city === "all" || s.city === city) && (chapter === "all" || s.chapter === chapter),
   );
 
   return (
@@ -62,7 +80,9 @@ function Dashboard() {
       <div className="flex items-start justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">Care Camps Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-1">Monitor activity across all chapters.</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Monitor activity across all chapters.
+          </p>
         </div>
         <Link
           to="/admin/new"
@@ -80,15 +100,22 @@ function Dashboard() {
 
       <div className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
-          <h2 className="font-semibold text-foreground mr-auto">Camp Sessions</h2>
+          <h2 className="font-semibold text-foreground mr-auto">Camps</h2>
           <select
             value={city}
-            onChange={(e) => { setCity(e.target.value); setChapter("all"); }}
+            onChange={(e) => {
+              setCity(e.target.value);
+              setChapter("all");
+            }}
             className="h-9 px-3 rounded-md border border-border bg-input text-sm font-medium text-foreground"
             aria-label="Filter by city"
           >
             <option value="all">All Cities</option>
-            {cities.map((c) => <option key={c} value={c}>{c}</option>)}
+            {cities.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
           </select>
           <select
             value={chapter}
@@ -97,17 +124,25 @@ function Dashboard() {
             aria-label="Filter by chapter"
           >
             <option value="all">All Chapters</option>
-            {chapters.map((c) => <option key={c} value={c}>{c}</option>)}
+            {chapters.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
           </select>
         </div>
 
         {loading ? (
-          <div className="px-5 py-10 text-center text-sm text-muted-foreground">Loading sessions…</div>
+          <div className="px-5 py-10 text-center text-sm text-muted-foreground">
+            Loading camps…
+          </div>
         ) : error ? (
           <div className="px-5 py-10 text-center text-sm text-destructive">{error}</div>
         ) : filtered.length === 0 ? (
           <div className="px-5 py-10 text-center text-sm text-muted-foreground">
-            {sessions.length === 0 ? "No camp sessions yet. Create one to get started." : "No sessions match these filters."}
+            {sessions.length === 0
+              ? "No camps yet. Create one to get started."
+              : "No camps match these filters."}
           </div>
         ) : (
           <>
@@ -120,10 +155,16 @@ function Dashboard() {
                   params={{ sessionId: s.id }}
                   className="block p-4 rounded-lg border border-border bg-background hover:bg-secondary/40 transition"
                 >
-                  <div className="font-semibold text-foreground">{s.city} — {s.chapter}</div>
+                  <div className="font-semibold text-foreground">
+                    {s.city} — {s.chapter}
+                  </div>
                   <div className="flex flex-wrap items-center gap-2 mt-2">
                     <Tag icon={<Calendar className="h-3 w-3" />}>
-                      {new Date(s.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                      {new Date(s.date).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
                     </Tag>
                   </div>
                   <div className="flex items-center gap-5 mt-4 pt-3 border-t border-border">
@@ -160,16 +201,29 @@ function Dashboard() {
                 <tbody className="divide-y divide-border">
                   {filtered.map((s) => (
                     <tr key={s.id} className="hover:bg-secondary/30 group">
-                      <td className="px-5 py-3 font-semibold text-foreground">{s.city} — {s.chapter}</td>
+                      <td className="px-5 py-3 font-semibold text-foreground">
+                        {s.city} — {s.chapter}
+                      </td>
                       <td className="px-5 py-3 text-muted-foreground">
-                        <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />{s.city}</span>
+                        <span className="inline-flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          {s.city}
+                        </span>
                       </td>
                       <td className="px-5 py-3 text-muted-foreground">{s.chapter}</td>
                       <td className="px-5 py-3 text-muted-foreground tabular-nums">
-                        {new Date(s.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                        {new Date(s.date).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
                       </td>
-                      <td className="px-5 py-3 text-right font-bold tabular-nums">{s.parent_count}</td>
-                      <td className="px-5 py-3 text-right font-bold tabular-nums">{s.card_count}</td>
+                      <td className="px-5 py-3 text-right font-bold tabular-nums">
+                        {s.parent_count}
+                      </td>
+                      <td className="px-5 py-3 text-right font-bold tabular-nums">
+                        {s.card_count}
+                      </td>
                       <td className="px-5 py-3 text-right">
                         <Link
                           to="/admin/sessions/$sessionId"
@@ -194,7 +248,8 @@ function Dashboard() {
 function Tag({ children, icon }: { children: React.ReactNode; icon?: React.ReactNode }) {
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-secondary text-secondary-foreground text-xs font-medium">
-      {icon}{children}
+      {icon}
+      {children}
     </span>
   );
 }

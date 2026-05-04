@@ -71,7 +71,9 @@ export function AdminLayout() {
               key={item.to}
               to={item.to}
               className={`flex flex-col items-center justify-center py-3 gap-1 text-xs font-medium min-h-14 ${
-                active ? "text-sidebar-primary-foreground bg-sidebar-accent" : "text-sidebar-foreground/70"
+                active
+                  ? "text-sidebar-primary-foreground bg-sidebar-accent"
+                  : "text-sidebar-foreground/70"
               }`}
             >
               <item.icon className="h-5 w-5" />

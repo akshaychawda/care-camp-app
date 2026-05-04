@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Care Camps — Design System Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+/* ─── TOKENS ─────────────────────────────────────────────── */
+:root {
+  --red:       #C62828;
+  --red-light: #FFEBEE;
+  --red-dark:  #8E0000;
+  --yellow:    #F59E0B;
+  --yellow-light: #FFF8E1;
+  --teal:      #0D9488;
+  --teal-light:#E0F2F1;
+  --green:     #25D366;
+
+  /* Light */
+  --bg:        #FAF9F7;
+  --surface:   #FFFFFF;
+  --border:    #E8E2D9;
+  --text:      #1A1A1A;
+  --muted:     #6B7280;
+  --input-bg:  #F5F3EF;
+  --shadow:    0 1px 4px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.06);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:       #0F1117;
+    --surface:  #1A1F2E;
+    --border:   #252D3D;
+    --text:     #F1F0EE;
+    --muted:    #8A8F9C;
+    --input-bg: #141820;
+    --shadow:   0 1px 4px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.3);
+  }
+}
+
+/* ─── RESET ──────────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background .2s,color .2s;}
+
+/* ─── NAV ────────────────────────────────────────────────── */
+.nav{display:flex;gap:6px;padding:16px 20px;background:var(--surface);border-bottom:1px solid var(--border);flex-wrap:wrap;position:sticky;top:0;z-index:100;}
+.nav-group{display:flex;gap:4px;align-items:center;}
+.nav-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:0 6px;}
+.tab{padding:6px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;border:none;background:transparent;color:var(--muted);transition:all .15s;}
+.tab:hover{background:var(--input-bg);}
+.tab.active{background:var(--red);color:white;}
+
+/* ─── LAYOUT ─────────────────────────────────────────────── */
+.screen{display:none;padding:24px 20px;}
+.screen.visible{display:block;}
+.phone-wrap{display:flex;justify-content:center;padding:16px 0;}
+.phone{width:375px;min-height:780px;background:var(--bg);border-radius:40px;border:8px solid var(--border);overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;}
+@media (prefers-color-scheme: dark){.phone{border-color:#2A3245;}}
+
+/* ─── PARENT: SHARED ─────────────────────────────────────── */
+.p-header{padding:20px 20px 8px;display:flex;align-items:center;gap:12px;min-height:64px;}
+.p-back{width:40px;height:40px;border-radius:50%;background:var(--input-bg);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text);}
+.p-progress{flex:1;display:flex;align-items:center;gap:10px;}
+.p-bar{flex:1;height:4px;border-radius:99px;background:var(--border);}
+.p-fill{height:100%;border-radius:99px;background:var(--red);transition:width .4s;}
+.p-count{font-size:11px;font-weight:700;color:var(--muted);}
+.p-body{flex:1;display:flex;flex-direction:column;padding:0 24px 32px;}
+
+.mad-logo{display:inline-flex;align-items:center;justify-content:center;padding:8px 20px;border-radius:16px;background:var(--red);}
+.mad-logo span{color:white;font-weight:900;font-size:18px;letter-spacing:.08em;}
+
+.p-btn{width:100%;height:52px;border-radius:16px;font-size:15px;font-weight:700;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s;font-family:'Inter',sans-serif;}
+.p-btn.primary{background:var(--red);color:white;}
+.p-btn.primary:hover{background:var(--red-dark);}
+.p-btn.outline{background:transparent;border:2px solid var(--border);color:var(--text);}
+.p-btn.yellow{background:var(--yellow);color:#1A1A1A;}
+
+.p-field label{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px;}
+.p-field input{width:100%;height:52px;border-radius:14px;background:var(--input-bg);border:2px solid transparent;padding:0 16px;font-size:16px;color:var(--text);font-family:'Inter',sans-serif;outline:none;transition:border .15s;}
+.p-field input:focus{border-color:var(--red);background:var(--surface);}
+.p-field input::placeholder{color:var(--muted);opacity:.6;}
+
+/* ─── PARENT: WELCOME ────────────────────────────────────── */
+.welcome-body{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px 24px 32px;}
+.welcome-icon{width:120px;height:120px;border-radius:50%;background:var(--red-light);display:flex;align-items:center;justify-content:center;margin:32px auto 28px;font-size:56px;}
+@media(prefers-color-scheme:dark){.welcome-icon{background:#3D1515;}}
+.welcome-title{font-size:32px;font-weight:900;line-height:1.15;margin-bottom:12px;}
+.welcome-title span{color:var(--red);}
+.welcome-sub{font-size:16px;color:var(--muted);line-height:1.6;max-width:280px;margin-bottom:auto;}
+
+/* ─── PARENT: QUESTION ───────────────────────────────────── */
+.q-title{font-size:26px;font-weight:800;line-height:1.2;margin-bottom:10px;margin-top:8px;}
+.q-hint{font-size:14px;color:var(--muted);margin-bottom:24px;line-height:1.5;}
+.q-input{width:100%;height:60px;border-radius:16px;background:var(--input-bg);border:2px solid transparent;padding:0 20px;font-size:18px;color:var(--text);font-family:'Inter',sans-serif;outline:none;}
+.q-input:focus{border-color:var(--red);}
+
+/* ─── PARENT: LOADING ────────────────────────────────────── */
+.loading-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;}
+.loading-spinner{width:120px;height:120px;border-radius:50%;border:6px solid var(--red-light);border-top-color:var(--red);animation:spin 1s linear infinite;margin-bottom:32px;}
+@media(prefers-color-scheme:dark){.loading-spinner{border-color:#3D1515;border-top-color:var(--red);}}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-title{font-size:26px;font-weight:800;line-height:1.3;max-width:280px;}
+.loading-title span{color:var(--red);}
+
+/* ─── PARENT: REVEAL ─────────────────────────────────────── */
+.reveal-body{flex:1;display:flex;flex-direction:column;padding:16px 24px 28px;}
+.reveal-title{font-size:20px;font-weight:800;text-align:center;margin-bottom:16px;}
+.reveal-card{border-radius:24px;overflow:hidden;background:linear-gradient(135deg,#C62828,#8E0000);aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;margin-bottom:20px;}
+.reveal-card .card-img{font-size:80px;margin-bottom:12px;}
+.reveal-card .card-caption{color:rgba(255,255,255,.9);font-size:13px;font-style:italic;text-align:center;padding:0 20px;line-height:1.5;}
+.reveal-card .card-logo{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.15);border-radius:10px;padding:4px 10px;font-size:11px;font-weight:800;color:white;letter-spacing:.05em;}
+
+/* ─── PARENT: NEXT ───────────────────────────────────────── */
+.next-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;}
+.next-icon{width:100px;height:100px;border-radius:50%;background:var(--yellow-light);display:flex;align-items:center;justify-content:center;font-size:46px;margin-bottom:24px;}
+@media(prefers-color-scheme:dark){.next-icon{background:#3D2E00;}}
+.next-title{font-size:28px;font-weight:800;margin-bottom:10px;}
+.next-title span{color:var(--red);}
+.next-sub{font-size:15px;color:var(--muted);margin-bottom:auto;}
+
+/* ─── PARENT: CLOSED ─────────────────────────────────────── */
+.closed-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;}
+.closed-icon{width:100px;height:100px;border-radius:50%;background:var(--input-bg);display:flex;align-items:center;justify-content:center;font-size:46px;margin-bottom:24px;}
+.closed-title{font-size:26px;font-weight:800;margin-bottom:12px;}
+.closed-sub{font-size:15px;color:var(--muted);line-height:1.6;max-width:260px;}
+
+/* ─── ADMIN SHARED ───────────────────────────────────────── */
+.admin-wrap{max-width:1100px;}
+.admin-page-title{font-size:26px;font-weight:800;margin-bottom:4px;}
+.admin-page-sub{font-size:14px;color:var(--muted);margin-bottom:28px;}
+.back-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:16px;cursor:pointer;text-decoration:none;}
+.back-link:hover{color:var(--text);}
+
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--shadow);}
+.stat-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px;}
+.stat-val{font-size:28px;font-weight:800;color:var(--text);}
+.stat-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:12px;}
+.stat-icon.red{background:var(--red-light);}
+.stat-icon.yellow{background:var(--yellow-light);}
+.stat-icon.teal{background:var(--teal-light);}
+@media(prefers-color-scheme:dark){.stat-icon.red{background:#3D1515;}.stat-icon.yellow{background:#3D2E00;}.stat-icon.teal{background:#0D2A28;}}
+
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
+.grid-2{display:grid;grid-template-columns:1fr 2fr;gap:20px;}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:between;gap:12px;}
+.card-title{font-size:14px;font-weight:700;}
+.card-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:99px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
+.badge.open{background:#E0F7F1;color:#047857;}
+.badge.closed{background:#FEE2E2;color:#B91C1C;}
+@media(prefers-color-scheme:dark){.badge.open{background:#0D2A28;color:#34D399;}.badge.closed{background:#3D1515;color:#F87171;}}
+
+.a-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all .15s;}
+.a-btn.primary{background:var(--red);color:white;}
+.a-btn.primary:hover{background:var(--red-dark);}
+.a-btn.outline-red{background:transparent;border:2px solid var(--red);color:var(--red);}
+.a-btn.outline{background:transparent;border:2px solid var(--border);color:var(--text);}
+.a-btn.sm{padding:6px 12px;font-size:12px;}
+
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead tr{background:var(--input-bg);}
+th{text-align:left;padding:10px 16px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);}
+td{padding:12px 16px;border-bottom:1px solid var(--border);}
+tr:last-child td{border:none;}
+tr:hover td{background:var(--input-bg);}
+
+/* QR in admin */
+.qr-block{padding:20px;border-top:1px solid var(--border);}
+.qr-box{width:130px;height:130px;background:white;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:12px 0;border:1px solid var(--border);}
+.qr-link-code{font-size:11px;color:var(--muted);word-break:break-all;background:var(--input-bg);padding:8px 10px;border-radius:8px;margin-bottom:10px;font-family:monospace;}
+
+/* Form */
+.form-field{margin-bottom:18px;}
+.form-field label{display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px;}
+.form-field input{width:100%;height:44px;border-radius:10px;background:var(--input-bg);border:2px solid var(--border);padding:0 14px;font-size:14px;color:var(--text);font-family:'Inter',sans-serif;outline:none;transition:border .15s;}
+.form-field input:focus{border-color:var(--red);background:var(--surface);}
+.form-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;box-shadow:var(--shadow);max-width:520px;}
+
+/* Toggle status */
+.status-row{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
+
+/* Camp list row */
+.camp-row{display:flex;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border);gap:16px;cursor:pointer;transition:background .1s;}
+.camp-row:hover{background:var(--input-bg);}
+.camp-row:last-child{border:none;}
+.camp-name{font-weight:700;font-size:14px;}
+.camp-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+.camp-stats{margin-left:auto;display:flex;gap:20px;align-items:center;}
+.camp-stat{text-align:right;}
+.camp-stat .n{font-weight:800;font-size:15px;}
+.camp-stat .l{font-size:11px;color:var(--muted);}
+.arrow{color:var(--muted);font-size:16px;}
+
+/* QR SVG helper */
+.qr-svg{width:110px;height:110px;}
+
+/* Confirm card */
+.confirm-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:520px;box-shadow:var(--shadow);}
+.confirm-success{display:flex;align-items:center;gap:8px;color:var(--teal);font-size:13px;font-weight:700;margin-bottom:12px;}
+</style>
+</head>
+<body>
+
+<!-- ─── NAV ─────────────────────────────────────────────────────── -->
+<div class="nav">
+  <div class="nav-group">
+    <span class="nav-label">Parent Flow</span>
+    <button class="tab active" onclick="show('welcome')">Welcome</button>
+    <button class="tab" onclick="show('parent-form')">Parent Info</button>
+    <button class="tab" onclick="show('question')">Question</button>
+    <button class="tab" onclick="show('loading')">Loading</button>
+    <button class="tab" onclick="show('reveal')">Card Reveal</button>
+    <button class="tab" onclick="show('next')">Next Child</button>
+    <button class="tab" onclick="show('closed')">Camp Closed</button>
+    <button class="tab" onclick="show('no-session')">No Session</button>
+  </div>
+  <div class="nav-group">
+    <span class="nav-label">Admin</span>
+    <button class="tab" onclick="show('admin-dash')">Dashboard</button>
+    <button class="tab" onclick="show('admin-new')">New Camp</button>
+    <button class="tab" onclick="show('admin-created')">Camp Created</button>
+    <button class="tab" onclick="show('admin-detail')">Camp Detail</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- PARENT: WELCOME -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="screen visible" id="welcome">
+  <div class="phone-wrap"><div class="phone">
+    <div class="p-header"><div style="width:40px;height:40px;"></div><div style="flex:1"></div></div>
+    <div class="welcome-body">
+      <div style="margin-bottom:12px;"><div class="mad-logo"><span>MAD</span></div></div>
+      <div class="welcome-icon">✨</div>
+      <h1 class="welcome-title">Welcome to<br/><span>Care Camps</span></h1>
+      <p class="welcome-sub">Answer a few questions and we'll create something magical for your child.</p>
+      <div style="height:32px;"></div>
+      <button class="p-btn primary">Let's Begin &nbsp;→</button>
+    </div>
+  </div></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- PARENT: PARENT FORM -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="screen" id="parent-form">
+  <div class="phone-wrap"><div class="phone">
+    <div class="p-header">
+      <button class="p-back">←</button>
+      <div style="flex:1"></div>
+    </div>
+    <div class="p-body">
+      <h1 style="font-size:26px;font-weight:800;margin-bottom:6px;margin-top:8px;">First, about you</h1>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:24px;">This helps us personalise your child's card.</p>
+      <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:auto;">
+        <div class="p-field"><label>Full Name</label><input placeholder="Your name"/></div>
+        <div class="p-field"><label>Phone Number</label><input placeholder="10-digit mobile" type="tel"/></div>
+        <div class="p-field"><label>City</label><input placeholder="e.g. Pune"/></div>
+        <div class="p-field"><label>Neighbourhood / Area</label><input placeholder="e.g. Koregaon Park"/></div>
+      </div>
+      <div style="padding-top:24px;">
+        <button class="p-btn primary">Continue &nbsp;→</button>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- PARENT: QUESTION -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="screen" id="question">
+  <div class="phone-wrap"><div class="phone">
+    <div class="p-header">
+      <button class="p-back">←</button>
+      <div class="p-progress">
+        <div class="p-bar"><div class="p-fill" style="width:40%"></div></div>
+        <span class="p-count">2 of 5</span>
+      </div>
+      <div style="width:40px;"></div>
+    </div>
+    <div class="p-body">
+      <h2 class="q-title">What is your favourite subject or activity?</h2>
+      <p class="q-hint">Maths, drawing, dancing, football…</p>
+      <input class="q-input" placeholder="Type your answer…"/>
+      <div style="flex:1;"></div>
+      <button class="p-btn primary" style="margin-top:24px;">Next &nbsp;→</button>
+    </div>
+  </div></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- PARENT: LOADING -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="screen" id="loading">
+  <div class="phone-wrap"><div class="phone">
+    <div class="loading-body">
+      <div class="loading-spinner"></div>
+      <h2 class="loading-title">Painting <span>Aryan</span>'s dream…</h2>
+      <p style="font-size:14px;color:var(--muted);margin-top:12px;">This will just take a moment ✨</p>
+    </div>
+  </div></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- PARENT: CARD REVEAL -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="screen" id="reveal">
+  <div class="phone-wrap"><div class="phone">
+    <div class="p-header"><div style="width:40px;height:40px;"></div></div>
+    <div class="reveal-body">
+      <h2 class="reveal-title">Aryan's Dream Card ✨</h2>
+      <div class="reveal-card">
+        <div class="card-logo">MAD</div>
+        <div class="card-img">🚀</div>
+        <p class="card-caption">"Aryan dreams of becoming a scientist and making pollution better."</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button class="p-btn outline">⬇ Download Card</button>
+        <button class="p-btn primary" onclick="show('next')">Next Child →</button>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- PARENT: NEXT CHILD -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="screen" id="next">
+  <div class="phone-wrap"><div class="phone">
+    <div class="next-body">
+      <div class="mad-logo" style="margin-bottom:40px;"><span>MAD</span></div>
+      <div class="next-icon">🌟</div>
+      <h2 class="next-title">Done! <span>Aryan</span>'s card is ready.</h2>
+      <p class="next-sub">Thank you for being part of this moment.</p>
+      <div style="height:32px;"></div>
+      <button class="p-btn primary">Next Child →</button>
+    </div>
+  </div></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- PARENT: CAMP CLOSED -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="screen" id="closed">
+  <div class="phone-wrap"><div class="phone">
+    <div class="closed-body">
+      <div class="mad-logo" style="margin-bottom:40px;"><span>MAD</span></div>
+      <div class="closed-icon">🔒</div>
+      <h2 class="closed-title">This camp has ended</h2>
+      <p class="closed-sub">Registration for this Care Camp is now closed. Thank you for your interest!</p>
+    </div>
+  </div></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- PARENT: NO SESSION -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="screen" id="no-session">
+  <div class="phone-wrap"><div class="phone">
+    <div class="closed-body">
+      <div class="mad-logo" style="margin-bottom:40px;"><span>MAD</span></div>
+      <div class="closed-icon">🔗</div>
+      <h2 class="closed-title">Invalid link</h2>
+      <p class="closed-sub">This link is not connected to a valid camp session. Please ask your volunteer for the correct link.</p>
+    </div>
+  </div></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- ADMIN: DASHBOARD -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="screen" id="admin-dash">
+  <div class="admin-wrap">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px;">
+      <div>
+        <h1 class="admin-page-title">Care Camps Dashboard</h1>
+        <p class="admin-page-sub">Monitor activity across all chapters.</p>
+      </div>
+      <button class="a-btn primary" onclick="show('admin-new')">+ New Camp</button>
+    </div>
+
+    <div class="grid-3">
+      <div class="stat-card">
+        <div class="stat-icon red">🏕</div>
+        <div class="stat-label">Total Camps</div>
+        <div class="stat-val">12</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon yellow">👥</div>
+        <div class="stat-label">Parents Registered</div>
+        <div class="stat-val">438</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon teal">✨</div>
+        <div class="stat-label">Dream Cards Generated</div>
+        <div class="stat-val">321</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header" style="justify-content:space-between;">
+        <div><div class="card-title">Camp Sessions</div></div>
+        <div style="display:flex;gap:8px;">
+          <select style="height:32px;padding:0 10px;border-radius:8px;border:1px solid var(--border);background:var(--input-bg);font-size:12px;font-weight:600;color:var(--text);font-family:'Inter',sans-serif;"><option>All Cities</option><option>Pune</option><option>Mumbai</option></select>
+          <select style="height:32px;padding:0 10px;border-radius:8px;border:1px solid var(--border);background:var(--input-bg);font-size:12px;font-weight:600;color:var(--text);font-family:'Inter',sans-serif;"><option>All Chapters</option></select>
+        </div>
+      </div>
+      <div class="camp-row" onclick="show('admin-detail')">
+        <div>
+          <div class="camp-name">Pune — Deccan</div>
+          <div class="camp-meta">3 May 2026</div>
+        </div>
+        <span class="badge open">Open</span>
+        <div class="camp-stats">
+          <div class="camp-stat"><div class="n">24</div><div class="l">Parents</div></div>
+          <div class="camp-stat"><div class="n">18</div><div class="l">Cards</div></div>
+          <span class="arrow">›</span>
+        </div>
+      </div>
+      <div class="camp-row">
+        <div>
+          <div class="camp-name">Mumbai — Andheri</div>
+          <div class="camp-meta">28 Apr 2026</div>
+        </div>
+        <span class="badge closed">Closed</span>
+        <div class="camp-stats">
+          <div class="camp-stat"><div class="n">41</div><div class="l">Parents</div></div>
+          <div class="camp-stat"><div class="n">38</div><div class="l">Cards</div></div>
+          <span class="arrow">›</span>
+        </div>
+      </div>
+      <div class="camp-row">
+        <div>
+          <div class="camp-name">Bangalore — Koramangala</div>
+          <div class="camp-meta">20 Apr 2026</div>
+        </div>
+        <span class="badge closed">Closed</span>
+        <div class="camp-stats">
+          <div class="camp-stat"><div class="n">33</div><div class="l">Parents</div></div>
+          <div class="camp-stat"><div class="n">29</div><div class="l">Cards</div></div>
+          <span class="arrow">›</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- ADMIN: NEW CAMP -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="screen" id="admin-new">
+  <div class="admin-wrap">
+    <a class="back-link" onclick="show('admin-dash')">← Back to Dashboard</a>
+    <h1 class="admin-page-title">Create New Camp</h1>
+    <p class="admin-page-sub">Set up a Care Camp session for your chapter.</p>
+    <div class="form-card">
+      <div class="form-field"><label>City</label><input placeholder="e.g. Pune"/></div>
+      <div class="form-field"><label>Chapter</label><input placeholder="e.g. Deccan"/></div>
+      <div class="form-field"><label>Date</label><input type="date"/></div>
+      <button class="a-btn primary" style="width:100%;height:44px;justify-content:center;font-size:14px;" onclick="show('admin-created')">Create Camp</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- ADMIN: CAMP CREATED + QR -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="screen" id="admin-created">
+  <div class="admin-wrap">
+    <a class="back-link" onclick="show('admin-dash')">← Back to Dashboard</a>
+    <div class="confirm-card">
+      <div class="confirm-success">✓ Camp created</div>
+      <h1 style="font-size:22px;font-weight:800;margin-bottom:4px;">Pune — Deccan</h1>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:24px;">3 May 2026</p>
+      <div style="display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:24px;">
+        <div class="qr-box">
+          <svg class="qr-svg" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
+            <rect width="21" height="21" fill="white"/>
+            <rect x="1" y="1" width="7" height="7" fill="#1A1A1A"/><rect x="2" y="2" width="5" height="5" fill="white"/><rect x="3" y="3" width="3" height="3" fill="#1A1A1A"/>
+            <rect x="13" y="1" width="7" height="7" fill="#1A1A1A"/><rect x="14" y="2" width="5" height="5" fill="white"/><rect x="15" y="3" width="3" height="3" fill="#1A1A1A"/>
+            <rect x="1" y="13" width="7" height="7" fill="#1A1A1A"/><rect x="2" y="14" width="5" height="5" fill="white"/><rect x="3" y="15" width="3" height="3" fill="#1A1A1A"/>
+            <rect x="9" y="1" width="1" height="1" fill="#1A1A1A"/><rect x="11" y="2" width="1" height="1" fill="#1A1A1A"/>
+            <rect x="9" y="9" width="2" height="1" fill="#1A1A1A"/><rect x="12" y="10" width="1" height="1" fill="#1A1A1A"/>
+            <rect x="10" y="13" width="1" height="2" fill="#1A1A1A"/><rect x="12" y="14" width="2" height="1" fill="#1A1A1A"/>
+            <rect x="9" y="17" width="1" height="1" fill="#1A1A1A"/><rect x="11" y="19" width="2" height="1" fill="#1A1A1A"/>
+          </svg>
+        </div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:8px;max-width:300px;">Share this QR with your volunteers before the event.</p>
+        <div class="qr-link-code">https://care-camps.pages.dev/?session=abc123-xyz456</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <button class="a-btn outline" style="justify-content:center;height:40px;">📋 Copy Link</button>
+        <button class="a-btn primary" style="justify-content:center;height:40px;">Share on WhatsApp</button>
+      </div>
+      <button style="width:100%;margin-top:10px;padding:10px;font-size:13px;font-weight:600;color:var(--muted);background:none;border:none;cursor:pointer;font-family:'Inter',sans-serif;" onclick="show('admin-new')">Create another →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- ADMIN: CAMP DETAIL -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="screen" id="admin-detail">
+  <div class="admin-wrap">
+    <a class="back-link" onclick="show('admin-dash')">← Back to Dashboard</a>
+    <h1 class="admin-page-title">Pune — Deccan — 3 May 2026</h1>
+    <div class="status-row">
+      <span class="badge open" id="detail-badge">Open</span>
+      <button class="a-btn outline-red sm" id="detail-toggle" onclick="toggleCampStatus()">Close Camp</button>
+    </div>
+
+    <div class="grid-2">
+      <!-- Stats + QR sidebar -->
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="stat-card" style="padding:16px;">
+          <div class="stat-label">Parents Registered</div>
+          <div class="stat-val" style="font-size:22px;">24</div>
+        </div>
+        <div class="stat-card" style="padding:16px;">
+          <div class="stat-label">Cards Generated</div>
+          <div class="stat-val" style="font-size:22px;">18</div>
+        </div>
+        <div class="stat-card" style="padding:16px;">
+          <div class="stat-label">Date</div>
+          <div style="font-size:15px;font-weight:700;margin-top:4px;">3 May 2026</div>
+        </div>
+        <!-- QR -->
+        <div class="card">
+          <div class="card-header"><div class="card-title">Camp QR Code</div></div>
+          <div class="qr-block">
+            <div class="qr-box">
+              <svg class="qr-svg" viewBox="0 0 21 21">
+                <rect width="21" height="21" fill="white"/>
+                <rect x="1" y="1" width="7" height="7" fill="#1A1A1A"/><rect x="2" y="2" width="5" height="5" fill="white"/><rect x="3" y="3" width="3" height="3" fill="#1A1A1A"/>
+                <rect x="13" y="1" width="7" height="7" fill="#1A1A1A"/><rect x="14" y="2" width="5" height="5" fill="white"/><rect x="15" y="3" width="3" height="3" fill="#1A1A1A"/>
+                <rect x="1" y="13" width="7" height="7" fill="#1A1A1A"/><rect x="2" y="14" width="5" height="5" fill="white"/><rect x="3" y="15" width="3" height="3" fill="#1A1A1A"/>
+                <rect x="9" y="2" width="1" height="1" fill="#1A1A1A"/><rect x="11" y="3" width="1" height="1" fill="#1A1A1A"/>
+                <rect x="9" y="9" width="2" height="1" fill="#1A1A1A"/><rect x="12" y="11" width="1" height="1" fill="#1A1A1A"/>
+              </svg>
+            </div>
+            <div class="qr-link-code">care-camps.pages.dev/?session=abc123</div>
+            <div style="display:flex;gap:8px;">
+              <button class="a-btn outline sm">📋 Copy</button>
+              <button class="a-btn primary sm">Share</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Registrations -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Registrations</div>
+            <div class="card-sub">24 registered</div>
+          </div>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Name</th><th>Phone</th><th>Area</th><th>Card</th>
+          </tr></thead>
+          <tbody>
+            <tr><td style="font-weight:600;">Priya Sharma</td><td style="color:var(--muted);">9876543210</td><td style="color:var(--muted);">Koregaon Park</td><td style="color:#047857;font-weight:700;">✓ Yes</td></tr>
+            <tr><td style="font-weight:600;">Rahul Mehta</td><td style="color:var(--muted);">9123456789</td><td style="color:var(--muted);">Baner</td><td style="color:var(--muted);">✗ No</td></tr>
+            <tr><td style="font-weight:600;">Anita Joshi</td><td style="color:var(--muted);">9988776655</td><td style="color:var(--muted);">Kothrud</td><td style="color:#047857;font-weight:700;">✓ Yes</td></tr>
+            <tr><td style="font-weight:600;">Suresh Kumar</td><td style="color:var(--muted);">9011223344</td><td style="color:var(--muted);">Hadapsar</td><td style="color:#047857;font-weight:700;">✓ Yes</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('visible'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('visible');
+  document.querySelectorAll('.tab').forEach(t => {
+    if(t.getAttribute('onclick') === `show('${id}')`) t.classList.add('active');
+  });
+}
+
+let campOpen = true;
+function toggleCampStatus() {
+  campOpen = !campOpen;
+  const badge = document.getElementById('detail-badge');
+  const btn = document.getElementById('detail-toggle');
+  if (campOpen) {
+    badge.textContent = 'Open'; badge.className = 'badge open';
+    btn.textContent = 'Close Camp'; btn.className = 'a-btn outline-red sm';
+  } else {
+    badge.textContent = 'Closed'; badge.className = 'badge closed';
+    btn.textContent = 'Reopen Camp'; btn.className = 'a-btn outline sm';
+  }
+}
+</script>
+</body>
+</html>

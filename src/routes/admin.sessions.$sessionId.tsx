@@ -1,13 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
-import { getSession, type CampSession, type Registration } from "@/lib/api";
+import { ArrowLeft, CheckCircle2, XCircle, Copy, Check } from "lucide-react";
+import QRCode from "qrcode";
+import { getSession, toggleCampStatus, type CampSession, type Registration } from "@/lib/api";
 
 export const Route = createFileRoute("/admin/sessions/$sessionId")({
   component: SessionDetail,
   errorComponent: ({ error }) => (
     <div className="p-10 text-center">
-      <h1 className="text-xl font-bold mb-2">Couldn't load session</h1>
+      <h1 className="text-xl font-bold mb-2">Couldn't load camp</h1>
       <p className="text-sm text-muted-foreground mb-4">{error.message}</p>
       <Link to="/admin" className="text-primary font-semibold">
         ← Back to dashboard
@@ -39,31 +40,91 @@ function CardYesNo({ ok }: { ok: boolean }) {
   );
 }
 
+function CampQR({ sessionId }: { sessionId: string }) {
+  const [qr, setQr] = useState("");
+  const [copied, setCopied] = useState(false);
+  const campLink = `${window.location.origin}/?session=${sessionId}`;
+
+  useEffect(() => {
+    QRCode.toDataURL(campLink, { width: 240, margin: 1 })
+      .then(setQr)
+      .catch(() => {});
+  }, [campLink]);
+
+  const copy = async () => {
+    await navigator.clipboard.writeText(campLink).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  };
+
+  return (
+    <div className="bg-card border border-border rounded-lg p-4 space-y-3">
+      <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+        Camp QR Code
+      </div>
+      <div className="flex justify-center">
+        {qr ? (
+          <img src={qr} alt="Camp QR code" className="w-40 h-40 rounded-lg" />
+        ) : (
+          <div className="w-40 h-40 rounded-lg bg-secondary animate-pulse" />
+        )}
+      </div>
+      <code className="block text-xs text-muted-foreground break-all bg-secondary px-2 py-1.5 rounded">
+        {campLink}
+      </code>
+      <button
+        onClick={copy}
+        className="w-full h-9 rounded-lg border-2 border-primary text-primary font-semibold text-sm flex items-center justify-center gap-2 hover:bg-primary/5 transition"
+      >
+        {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+        {copied ? "Copied!" : "Copy Link"}
+      </button>
+    </div>
+  );
+}
+
 function SessionDetail() {
   const { sessionId } = Route.useParams();
   const [session, setSession] = useState<CampSession | null>(null);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isOpen, setIsOpen] = useState<boolean | null>(null);
+  const [toggling, setToggling] = useState(false);
 
   useEffect(() => {
     getSession(sessionId)
       .then(({ session, registrations }) => {
         setSession(session);
         setRegistrations(registrations);
+        setIsOpen(session.is_open);
       })
-      .catch((e) => setError(e.message ?? "Failed to load session"))
+      .catch((e) => setError(e.message ?? "Failed to load camp"))
       .finally(() => setLoading(false));
   }, [sessionId]);
 
+  const handleToggle = async () => {
+    if (isOpen === null) return;
+    const next = !isOpen;
+    setIsOpen(next);
+    setToggling(true);
+    try {
+      await toggleCampStatus(sessionId, next);
+    } catch {
+      setIsOpen(!next);
+    } finally {
+      setToggling(false);
+    }
+  };
+
   if (loading)
-    return <div className="p-10 text-center text-sm text-muted-foreground">Loading session…</div>;
+    return <div className="p-10 text-center text-sm text-muted-foreground">Loading camp…</div>;
 
   if (error || !session)
     return (
       <div className="p-10 text-center">
-        <h1 className="text-xl font-bold mb-2">Couldn't load session</h1>
-        <p className="text-sm text-muted-foreground mb-4">{error ?? "Session not found"}</p>
+        <h1 className="text-xl font-bold mb-2">Couldn't load camp</h1>
+        <p className="text-sm text-muted-foreground mb-4">{error ?? "Camp not found"}</p>
         <Link to="/admin" className="text-primary font-semibold">
           ← Back to dashboard
         </Link>
@@ -85,18 +146,42 @@ function SessionDetail() {
         <ArrowLeft className="h-4 w-4" /> Back to Dashboard
       </Link>
 
-      <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-6">
+      <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
         {session.city} — {session.chapter} — {dateStr}
       </h1>
 
+      <div className="flex items-center gap-3 mb-6">
+        <span
+          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+            isOpen
+              ? "bg-emerald-900/40 text-emerald-400"
+              : "bg-red-900/40 text-red-400"
+          }`}
+        >
+          {isOpen ? "Open" : "Closed"}
+        </span>
+        <button
+          onClick={handleToggle}
+          disabled={toggling || isOpen === null}
+          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border-2 disabled:opacity-40 transition ${
+            isOpen
+              ? "border-red-400 text-red-400 hover:bg-red-400/10"
+              : "border-emerald-400 text-emerald-400 hover:bg-emerald-400/10"
+          }`}
+        >
+          {toggling ? "Saving…" : isOpen ? "Close Camp" : "Reopen Camp"}
+        </button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Stats column */}
+        {/* Stats + QR column */}
         <aside className="md:col-span-1 space-y-3">
           <StatBlock label="Parents Registered" value={session.parent_count} />
           <StatBlock label="Cards Generated" value={session.card_count} />
           <StatBlock label="Date" value={dateStr} />
           <StatBlock label="City" value={session.city} />
           <StatBlock label="Chapter" value={session.chapter} />
+          <CampQR sessionId={sessionId} />
         </aside>
 
         {/* Registrations column */}
@@ -110,7 +195,7 @@ function SessionDetail() {
 
           {registrations.length === 0 ? (
             <div className="px-5 py-10 text-center text-sm text-muted-foreground">
-              No registrations yet for this session.
+              No registrations yet for this camp.
             </div>
           ) : (
             <>

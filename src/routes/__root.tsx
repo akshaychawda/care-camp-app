@@ -31,16 +31,26 @@ export const Route = createRootRoute({
       { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1" },
       { name: "theme-color", content: "#f5a261" },
       { title: "Care Camps Dream App — MAD" },
-      { name: "description", content: "MAD Care Camps: capture your child's dream and receive a personalised dream card on WhatsApp." },
+      {
+        name: "description",
+        content:
+          "MAD Care Camps: capture your child's dream and receive a personalised dream card on WhatsApp.",
+      },
       { property: "og:title", content: "Care Camps Dream App — MAD" },
-      { property: "og:description", content: "Make A Difference — turning every child's dream into a keepsake." },
+      {
+        property: "og:description",
+        content: "Make A Difference — turning every child's dream into a keepsake.",
+      },
       { property: "og:type", content: "website" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,
