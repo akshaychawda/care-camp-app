@@ -375,7 +375,7 @@ function NoSession() {
       <Logo className="h-14 mb-10" />
       <h1 className="text-2xl font-bold text-foreground">Invalid link</h1>
       <p className="mt-3 text-base text-muted-foreground max-w-[280px]">
-        This link is not connected to a valid camp session. Please ask your volunteer for the
+        This link is not connected to a valid Care Camp. Please ask your volunteer for the
         correct link.
       </p>
     </div>
