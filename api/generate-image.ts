@@ -57,26 +57,40 @@ export default async function handler(req: Request): Promise<Response> {
 
   const openai = new OpenAI({ apiKey: openaiKey });
 
-  // Generate image with DALL-E 3
+  // Generate image + caption in parallel
   let dalleUrl: string;
+  let caption: string;
   try {
-    const response = await openai.images.generate({
-      model: "dall-e-3",
-      prompt: buildPrompt(
-        childName || "a child",
-        gender || "child",
-        aspiration || "something great",
-        subject || "learning",
-        problem || "the world",
-        selfDescription || "brave",
-      ),
-      size: "1024x1024",
-      quality: "standard",
-      n: 1,
-    });
-    dalleUrl = response.data[0].url!;
+    const [imageResponse, captionResponse] = await Promise.all([
+      openai.images.generate({
+        model: "dall-e-3",
+        prompt: buildPrompt(
+          childName || "a child",
+          gender || "child",
+          aspiration || "something great",
+          subject || "learning",
+          problem || "the world",
+          selfDescription || "brave",
+        ),
+        size: "1024x1024",
+        quality: "standard",
+        n: 1,
+      }),
+      openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "user",
+            content: `Write one short, poetic, inspiring sentence (under 20 words) about a child named ${childName || "this child"} who dreams of becoming a ${aspiration || "changemaker"} and wants to help with ${problem || "the world"}. Use their first name. Make it uplifting and beautiful.`,
+          },
+        ],
+        max_tokens: 60,
+      }),
+    ]);
+    dalleUrl = imageResponse.data[0].url!;
+    caption = captionResponse.choices[0].message.content?.trim().replace(/^["']|["']$/g, "") ?? "";
   } catch (err) {
-    console.error("DALL-E error:", err);
+    console.error("Generation error:", err);
     return json({ error: "Image generation failed" }, 500);
   }
 
@@ -110,7 +124,7 @@ export default async function handler(req: Request): Promise<Response> {
     .update({ card_generated: true, image_url: publicUrl })
     .eq("id", registrationId);
 
-  return json({ imageUrl: publicUrl }, 200);
+  return json({ imageUrl: publicUrl, caption }, 200);
 }
 
 function json(body: unknown, status: number): Response {

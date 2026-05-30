@@ -197,7 +197,7 @@ function Field({
 async function generateDreamCard(
   registrationId: string,
   data: FormData,
-): Promise<string | null> {
+): Promise<{ imageUrl: string | null; caption: string | null }> {
   try {
     const res = await fetch("/api/generate-image", {
       method: "POST",
@@ -212,11 +212,11 @@ async function generateDreamCard(
         selfDescription: data.q5,
       }),
     });
-    if (!res.ok) return null;
-    const { imageUrl } = await res.json();
-    return imageUrl ?? null;
+    if (!res.ok) return { imageUrl: null, caption: null };
+    const { imageUrl, caption } = await res.json();
+    return { imageUrl: imageUrl ?? null, caption: caption ?? null };
   } catch {
-    return null;
+    return { imageUrl: null, caption: null };
   }
 }
 
@@ -226,6 +226,7 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [caption, setCaption] = useState<string | null>(null);
 
   const idx = ORDER.indexOf(step);
   const go = (s: Step) => setStep(s);
@@ -247,9 +248,10 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
         answers: [data.q1, data.q2, data.q3, data.q4, data.q5],
       });
       go("loading");
-      // Generate image while loading screen shows — fallback to null on failure
-      const url = await generateDreamCard(registration.id, data);
+      // Generate image + caption while loading screen shows — fallback to null on failure
+      const { imageUrl: url, caption: cap } = await generateDreamCard(registration.id, data);
       setImageUrl(url);
+      setCaption(cap);
       go("reveal");
     } catch (err: unknown) {
       setSaveError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
@@ -385,6 +387,7 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
             dream={data.q1 || "something wonderful"}
             problem={data.q3 || "the world"}
             imageUrl={imageUrl}
+            caption={caption}
             onNext={() => go("next")}
           />
         )}
@@ -395,6 +398,7 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
             onNext={() => {
               setData({ ...EMPTY });
               setImageUrl(null);
+              setCaption(null);
               setSaveError(null);
               go("parent");
             }}
@@ -573,18 +577,21 @@ function Reveal({
   dream,
   problem,
   imageUrl,
+  caption,
   onNext,
 }: {
   childName: string;
   dream: string;
   problem: string;
   imageUrl: string | null;
+  caption: string | null;
   onNext: () => void;
 }) {
-  const caption =
-    dream && problem
-      ? `${childName} dreams of becoming a ${dream.toLowerCase()} and making ${problem.toLowerCase()} better.`
-      : `${childName} dreams of becoming a ${(dream || "changemaker").toLowerCase()}.`;
+  const displayCaption =
+    caption ||
+    (dream
+      ? `${childName} dreams of becoming a ${dream.toLowerCase()}.`
+      : `${childName} is going to change the world.`);
 
   const src = imageUrl ?? dreamCard;
 
@@ -622,7 +629,7 @@ function Reveal({
           <img src={madLogo} alt="MAD" className="h-6 w-auto object-contain" />
         </div>
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-5 pt-12">
-          <p className="font-display italic text-white text-lg leading-snug">"{caption}"</p>
+          <p className="font-display italic text-white text-lg leading-snug">"{displayCaption}"</p>
         </div>
       </div>
 
