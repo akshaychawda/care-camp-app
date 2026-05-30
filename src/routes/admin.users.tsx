@@ -351,6 +351,18 @@ function UsersPage() {
       toast.error("Something went wrong");
     }
     await load();
+    // Send approval notification (fire-and-forget — don't block UI on email failure)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session?.access_token) return;
+      fetch("/api/notify-approval", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ userId: id }),
+      }).catch(() => {}); // silent — toast was already shown for approval
+    });
   };
 
   const handleReject = async (id: string) => {
