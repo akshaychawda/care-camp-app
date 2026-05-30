@@ -587,10 +587,11 @@ function Reveal({
   caption: string | null;
   onNext: () => void;
 }) {
+  const article = /^[aeiou]/i.test(dream) ? "an" : "a";
   const displayCaption =
     caption ||
     (dream
-      ? `${childName} dreams of becoming a ${dream.toLowerCase()}.`
+      ? `${childName} dreams of becoming ${article} ${dream.toLowerCase()}.`
       : `${childName} is going to change the world.`);
 
   const src = imageUrl ?? dreamCard;
@@ -625,7 +626,7 @@ function Reveal({
           height={1024}
           className="w-full aspect-square object-cover"
         />
-        <div className="absolute top-3 right-3 bg-foreground/90 backdrop-blur rounded-xl px-3 py-2 flex items-center">
+        <div className="absolute top-3 right-3 bg-[#C62828] rounded-xl px-3 py-2 flex items-center">
           <img src={madLogo} alt="MAD" className="h-6 w-auto object-contain" />
         </div>
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-5 pt-12">

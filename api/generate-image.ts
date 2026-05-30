@@ -95,7 +95,7 @@ Respond with JSON: {"scene_prompt": "...", "caption": "..."}`,
       model: "gpt-image-2",
       prompt: scenePrompt,
       size: "1024x1024",
-      quality: "standard",
+      quality: "medium",
       n: 1,
     });
     // gpt-image-1 returns base64
