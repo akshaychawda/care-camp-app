@@ -15,9 +15,16 @@ export const Route = createFileRoute("/admin/new")({
   }),
 });
 
+const CITIES = [
+  "Ahmedabad", "Bengaluru", "Chandigarh", "Chennai", "Cochin", "Coimbatore",
+  "Delhi", "Dehradun", "Goa", "Guntur", "Gwalior", "Hyderabad", "Kolkata",
+  "Lucknow", "Mumbai", "Mysore", "Nagpur", "Pune", "Trivandrum", "Vijayawada",
+];
+
 function NewCamp() {
   const [city, setCity] = useState("");
-  const [chapter, setChapter] = useState("");
+  const [area, setArea] = useState("");
+  const [venue, setVenue] = useState("");
   const [date, setDate] = useState<Date | undefined>();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,11 +32,11 @@ function NewCamp() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!city || !chapter || !date) return;
+    if (!city || !area || !date) return;
     setSaving(true);
     setError(null);
     try {
-      const session = await createSession(city, chapter, format(date, "yyyy-MM-dd"));
+      const session = await createSession(city, area, venue, format(date, "yyyy-MM-dd"));
       const link = `${window.location.origin}/?session=${session.id}`;
       setCreated({ session, link });
     } catch (err: unknown) {
@@ -46,7 +53,8 @@ function NewCamp() {
         onReset={() => {
           setCreated(null);
           setCity("");
-          setChapter("");
+          setArea("");
+          setVenue("");
           setDate(undefined);
         }}
       />
@@ -62,25 +70,41 @@ function NewCamp() {
       </Link>
 
       <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Create New Camp</h1>
-      <p className="text-sm text-muted-foreground mb-8">Set up a Care Camp for your chapter.</p>
+      <p className="text-sm text-muted-foreground mb-8">Set up a Care Camp for your community.</p>
 
       <form onSubmit={submit} className="bg-card border border-border rounded-xl p-6 space-y-5">
         <FormField label="City">
           <input
+            list="city-options"
             value={city}
             onChange={(e) => setCity(e.target.value)}
-            placeholder="e.g. Pune"
+            placeholder="Select or type a city"
+            required
+            autoComplete="off"
+            className="w-full h-11 px-3 rounded-lg border border-border bg-input text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+          <datalist id="city-options">
+            {CITIES.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
+        </FormField>
+
+        <FormField label="Area / Community">
+          <input
+            value={area}
+            onChange={(e) => setArea(e.target.value)}
+            placeholder="e.g. Koregaon Park, Baner"
             required
             className="w-full h-11 px-3 rounded-lg border border-border bg-input text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </FormField>
 
-        <FormField label="Chapter">
+        <FormField label="Venue">
           <input
-            value={chapter}
-            onChange={(e) => setChapter(e.target.value)}
-            placeholder="e.g. Deccan"
-            required
+            value={venue}
+            onChange={(e) => setVenue(e.target.value)}
+            placeholder="e.g. ZP School No. 4, Community Hall"
             className="w-full h-11 px-3 rounded-lg border border-border bg-input text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </FormField>
@@ -117,7 +141,7 @@ function NewCamp() {
 
         <button
           type="submit"
-          disabled={!city || !chapter || !date || saving}
+          disabled={!city || !area || !date || saving}
           className="w-full h-12 rounded-lg bg-primary text-primary-foreground font-semibold disabled:opacity-40 hover:opacity-90 transition flex items-center justify-center gap-2"
         >
           {saving ? (
@@ -173,7 +197,7 @@ function Confirmation({
   };
 
   const share = () => {
-    const text = `Join the MAD Care Camp — ${data.session.city} (${data.session.chapter}) on ${new Date(data.session.date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}: ${data.link}`;
+    const text = `Join the MAD Care Camp — ${data.session.city}, ${data.session.area}${data.session.venue ? ` (${data.session.venue})` : ""} on ${new Date(data.session.date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}: ${data.link}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
 
@@ -192,8 +216,11 @@ function Confirmation({
         </div>
 
         <h1 className="text-2xl font-bold text-foreground">
-          {data.session.city} — {data.session.chapter}
+          {data.session.city} — {data.session.area}
         </h1>
+        {data.session.venue && (
+          <p className="text-muted-foreground text-sm mt-0.5">{data.session.venue}</p>
+        )}
         <p className="text-muted-foreground text-sm mt-1">
           {new Date(data.session.date + "T00:00:00").toLocaleDateString("en-IN", {
             day: "numeric",
