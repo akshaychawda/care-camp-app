@@ -446,12 +446,19 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
         {step === "next" && (
           <NextChild
             childName={data.childName || "Your child"}
+            imageUrl={imageUrl}
             onNext={() => {
-              setData({ ...EMPTY });
+              setData((prev) => ({
+                ...EMPTY,
+                parentName: prev.parentName,
+                phone: prev.phone,
+                city: prev.city,
+                area: prev.area,
+              }));
               setImageUrl(null);
               setCaption(null);
               setSaveError(null);
-              go("parent");
+              go("child");
             }}
           />
         )}
@@ -733,7 +740,7 @@ function Reveal({
   );
 }
 
-function NextChild({ childName, onNext }: { childName: string; onNext: () => void }) {
+function NextChild({ childName, imageUrl, onNext }: { childName: string; imageUrl: string | null; onNext: () => void }) {
   return (
     <div className="flex-1 flex flex-col items-center justify-center text-center">
       <div className="relative mb-10">
