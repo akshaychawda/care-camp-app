@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as CardRegistrationIdRouteImport } from './routes/card.$registrationId'
 import { Route as AuthPendingRouteImport } from './routes/auth.pending'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
@@ -38,6 +39,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const CardRegistrationIdRoute = CardRegistrationIdRouteImport.update({
+  id: '/card/$registrationId',
+  path: '/card/$registrationId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthPendingRoute = AuthPendingRouteImport.update({
   id: '/auth/pending',
@@ -73,6 +79,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AdminUsersRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/pending': typeof AuthPendingRoute
+  '/card/$registrationId': typeof CardRegistrationIdRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/sessions/$sessionId': typeof AdminSessionsSessionIdRoute
 }
@@ -83,6 +90,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AdminUsersRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/pending': typeof AuthPendingRoute
+  '/card/$registrationId': typeof CardRegistrationIdRoute
   '/admin': typeof AdminIndexRoute
   '/admin/sessions/$sessionId': typeof AdminSessionsSessionIdRoute
 }
@@ -95,6 +103,7 @@ export interface FileRoutesById {
   '/admin/users': typeof AdminUsersRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/auth/pending': typeof AuthPendingRoute
+  '/card/$registrationId': typeof CardRegistrationIdRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/sessions/$sessionId': typeof AdminSessionsSessionIdRoute
 }
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/auth/callback'
     | '/auth/pending'
+    | '/card/$registrationId'
     | '/admin/'
     | '/admin/sessions/$sessionId'
   fileRoutesByTo: FileRoutesByTo
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/auth/callback'
     | '/auth/pending'
+    | '/card/$registrationId'
     | '/admin'
     | '/admin/sessions/$sessionId'
   id:
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/auth/callback'
     | '/auth/pending'
+    | '/card/$registrationId'
     | '/admin/'
     | '/admin/sessions/$sessionId'
   fileRoutesById: FileRoutesById
@@ -139,6 +151,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   AuthPendingRoute: typeof AuthPendingRoute
+  CardRegistrationIdRoute: typeof CardRegistrationIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -170,6 +183,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/card/$registrationId': {
+      id: '/card/$registrationId'
+      path: '/card/$registrationId'
+      fullPath: '/card/$registrationId'
+      preLoaderRoute: typeof CardRegistrationIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/auth/pending': {
       id: '/auth/pending'
@@ -231,6 +251,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   AuthPendingRoute: AuthPendingRoute,
+  CardRegistrationIdRoute: CardRegistrationIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
