@@ -1,37 +1,25 @@
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createClient } from "@supabase/supabase-js";
 import OpenAI from "openai";
 
-export const config = { runtime: "edge" };
+// Node.js runtime — no 25s Edge cap; Vercel Pro allows up to 300s
+export const config = { maxDuration: 120 };
 
-export default async function handler(req: Request): Promise<Response> {
-  if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== "POST") return res.status(405).end();
 
   const supabaseUrl = process.env.VITE_SUPABASE_URL!;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
   const openaiKey = process.env.OPENAI_API_KEY!;
 
   if (!supabaseUrl || !serviceKey || !openaiKey) {
-    return json({ error: "Server misconfiguration" }, 500);
+    return res.status(500).json({ error: "Server misconfiguration" });
   }
 
-  let body: {
-    registrationId: string;
-    childName: string;
-    gender: string;
-    aspiration: string;
-    subject: string;
-    problem: string;
-    selfDescription: string;
-  };
+  const { registrationId, childName, gender, aspiration, subject, problem, selfDescription } =
+    req.body ?? {};
 
-  try {
-    body = await (req as Request).json();
-  } catch {
-    return json({ error: "Invalid request body" }, 400);
-  }
-
-  const { registrationId, childName, gender, aspiration, subject, problem, selfDescription } = body;
-  if (!registrationId) return json({ error: "registrationId required" }, 400);
+  if (!registrationId) return res.status(400).json({ error: "registrationId required" });
 
   const name = childName || "a child";
   const genderWord = gender === "girl" ? "girl" : gender === "boy" ? "boy" : "child";
@@ -48,7 +36,7 @@ export default async function handler(req: Request): Promise<Response> {
         {
           role: "system",
           content:
-            "You design image prompts for DALL-E and write captions for children's dream cards at community events in India. Output only valid JSON.",
+            "You design image prompts and write captions for children's dream cards at community events in India. Output only valid JSON.",
         },
         {
           role: "user",
@@ -60,18 +48,18 @@ export default async function handler(req: Request): Promise<Response> {
 - Wants to fix: ${problem || "problems in the world"}
 - One word to describe themselves: ${selfDescription || "brave"}
 
-Task 1 — scene_prompt: Write a 60–80 word DALL-E image prompt.
+Task 1 — scene_prompt: Write a 60–80 word image prompt.
 Rules:
-- Show the ${genderWord} ACTIVELY doing their job RIGHT NOW, not wishing or reaching for stars
-- Describe the exact setting, what they are doing, what objects are around them
+- Show the ${genderWord} ACTIVELY doing their job RIGHT NOW — not dreaming, not wishing, not reaching for stars
+- Describe the exact setting, what they are doing, specific objects around them
 - Weave in their love for "${subject}" visually somewhere in the scene
-- Indian cultural context — clothing, environment, people
-- Warm, vibrant, joyful, celebratory digital art
+- Indian cultural context — clothing, environment
+- Warm, vibrant, joyful, celebratory digital art style
 - End with: "No text or writing anywhere. Square composition."
 
-Task 2 — caption: One beautiful, poetic sentence under 20 words. Use the child's name ${name}. Reference their aspiration and the change they'll make. Avoid clichés like "reach for the stars".
+Task 2 — caption: One beautiful, poetic sentence under 20 words. Use ${name}. Reference their aspiration and the difference they will make. No clichés.
 
-Respond with JSON: {"scene_prompt": "...", "caption": "..."}`,
+Respond with JSON only: {"scene_prompt": "...", "caption": "..."}`,
         },
       ],
       max_tokens: 300,
@@ -81,15 +69,16 @@ Respond with JSON: {"scene_prompt": "...", "caption": "..."}`,
     const parsed = JSON.parse(plan.choices[0].message.content ?? "{}");
     scenePrompt = parsed.scene_prompt ?? "";
     caption = (parsed.caption ?? "").replace(/^["']|["']$/g, "");
+    console.log("Scene prompt:", scenePrompt);
+    console.log("Caption:", caption);
   } catch (err) {
     console.error("GPT planning error:", err);
-    // Fallback prompt if GPT fails
     scenePrompt = `A vibrant scene of a ${genderWord} in India actively working as a ${aspiration || "changemaker"}, surrounded by elements of ${subject || "their passion"}. Warm Indian colors, joyful atmosphere. No text. Square composition.`;
     caption = "";
   }
 
-  // Step 2: Generate the image using the scene GPT designed
-  let imageBuffer: ArrayBuffer;
+  // Step 2: Generate the image
+  let imageBuffer: Buffer;
   try {
     const imageResponse = await openai.images.generate({
       model: "gpt-image-2",
@@ -98,18 +87,14 @@ Respond with JSON: {"scene_prompt": "...", "caption": "..."}`,
       quality: "medium",
       n: 1,
     });
-    // gpt-image-1 returns base64
     const b64 = imageResponse.data[0].b64_json!;
-    const binary = atob(b64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    imageBuffer = bytes.buffer;
+    imageBuffer = Buffer.from(b64, "base64");
   } catch (err) {
     console.error("Image generation error:", err);
-    return json({ error: "Image generation failed" }, 500);
+    return res.status(500).json({ error: "Image generation failed" });
   }
 
-  // Upload to Supabase Storage
+  // Step 3: Upload to Supabase Storage
   const supabase = createClient(supabaseUrl, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
@@ -127,21 +112,14 @@ Respond with JSON: {"scene_prompt": "...", "caption": "..."}`,
     publicUrl = data.publicUrl;
   } catch (err) {
     console.error("Storage error:", err);
-    return json({ error: "Failed to store image" }, 500);
+    return res.status(500).json({ error: "Failed to store image" });
   }
 
-  // Mark card generated + store image URL
+  // Step 4: Mark card generated
   await supabase
     .from("parent_registrations")
     .update({ card_generated: true, image_url: publicUrl })
     .eq("id", registrationId);
 
-  return json({ imageUrl: publicUrl, caption }, 200);
-}
-
-function json(body: unknown, status: number): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  });
+  return res.status(200).json({ imageUrl: publicUrl, caption });
 }

@@ -90,7 +90,7 @@ const ORDER: Step[] = [
 function Logo({ className = "" }: { className?: string }) {
   return (
     <div
-      className={`inline-flex items-center justify-center px-5 py-2 rounded-2xl bg-foreground ${className}`}
+      className={`inline-flex items-center justify-center px-5 py-2 rounded-2xl bg-primary ${className}`}
     >
       <img src={madLogo} alt="MAD — Make A Difference" className="h-8 w-auto" />
     </div>
