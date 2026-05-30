@@ -271,3 +271,56 @@ export async function getShareableUsers(): Promise<Profile[]> {
   if (error) throw error;
   return data ?? [];
 }
+
+// ─── Analytics ────────────────────────────────────────────────────────────────
+
+export async function getRegistrationTimeline(filters: {
+  city?: string;
+  area?: string;
+  isOpen?: boolean;
+  ownerId?: string;
+}): Promise<{ date: string; count: number }[]> {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const { data, error } = await supabase
+    .from("parent_registrations")
+    .select("created_at, camp_sessions!inner(city, area, is_open, created_by)")
+    .gte("created_at", thirtyDaysAgo.toISOString());
+
+  if (error) throw error;
+
+  const filtered = (data ?? []).filter((r) => {
+    const s = r.camp_sessions as { city: string; area: string; is_open: boolean; created_by: string };
+    if (filters.city && s.city !== filters.city) return false;
+    if (filters.area && s.area !== filters.area) return false;
+    if (filters.isOpen !== undefined && s.is_open !== filters.isOpen) return false;
+    if (filters.ownerId && s.created_by !== filters.ownerId) return false;
+    return true;
+  });
+
+  // Build a map for the last 30 days with zero counts
+  const byDate: Record<string, number> = {};
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    byDate[d.toISOString().slice(0, 10)] = 0;
+  }
+  for (const r of filtered) {
+    const date = r.created_at.slice(0, 10);
+    if (date in byDate) byDate[date]++;
+  }
+
+  return Object.entries(byDate).map(([date, count]) => ({ date, count }));
+}
+
+export async function getCampOwners(): Promise<Profile[]> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("status", "active")
+    .in("role", ["co", "mad_employee", "super_admin"])
+    .order("full_name");
+  if (error) throw error;
+  return data ?? [];
+}
