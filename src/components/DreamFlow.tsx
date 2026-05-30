@@ -43,12 +43,15 @@ const QUESTIONS = [
   { key: "q5", label: "Describe yourself in one word.", hint: "Brave, curious, funny, kind…" },
 ] as const;
 
+type Gender = "boy" | "girl" | "child";
+
 type FormData = {
   parentName: string;
   phone: string;
   city: string;
   area: string;
   childName: string;
+  gender: Gender;
   q1: string;
   q2: string;
   q3: string;
@@ -62,6 +65,7 @@ const EMPTY: FormData = {
   city: "",
   area: "",
   childName: "",
+  gender: "child",
   q1: "",
   q2: "",
   q3: "",
@@ -201,6 +205,7 @@ async function generateDreamCard(
       body: JSON.stringify({
         registrationId,
         childName: data.childName,
+        gender: data.gender,
         aspiration: data.q1,
         subject: data.q2,
         problem: data.q3,
@@ -331,6 +336,27 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
               placeholder="Their name"
               autoFocus
             />
+            <div>
+              <span className="block text-sm font-semibold text-foreground/80 mb-2 px-1">
+                My child is a
+              </span>
+              <div className="grid grid-cols-3 gap-2">
+                {(["girl", "boy", "child"] as Gender[]).map((g) => (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => update("gender", g)}
+                    className={`h-12 rounded-2xl border-2 text-sm font-semibold capitalize transition ${
+                      data.gender === g
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-input text-foreground/70"
+                    }`}
+                  >
+                    {g === "child" ? "Prefer not to say" : g.charAt(0).toUpperCase() + g.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
           </ScreenForm>
         )}
 

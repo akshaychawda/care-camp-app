@@ -5,18 +5,23 @@ export const config = { runtime: "edge" };
 
 function buildPrompt(
   childName: string,
+  gender: string,
   aspiration: string,
   subject: string,
   problem: string,
   selfDescription: string,
 ): string {
+  const genderDesc = gender === "girl" ? "young Indian girl" : gender === "boy" ? "young Indian boy" : "young Indian child";
+  const pronoun = gender === "girl" ? "her" : gender === "boy" ? "his" : "their";
   return [
-    `Vibrant, joyful digital illustration for a child named ${childName} in India.`,
-    `They dream of becoming a ${aspiration}.`,
-    `They love ${subject} and want to help with ${problem} in the world.`,
+    `A vibrant, joyful digital illustration of a ${genderDesc} named ${childName} living ${pronoun} dream.`,
+    `The child is shown as a ${aspiration} — depict them actively in this role or clearly on the path to it.`,
+    `They love ${subject}: weave this into the scene naturally.`,
+    `They want to help with ${problem} in the world — let the image feel purposeful and hopeful.`,
     `They are ${selfDescription}.`,
-    `Style: warm, colorful, uplifting, hopeful. Celebrating a child's potential and dreams.`,
-    `No text or writing anywhere in the image. Square composition.`,
+    `Style: warm Indian colors, uplifting digital art, empowering and celebratory mood.`,
+    `Make the aspiration visually unmistakable in the scene.`,
+    `No text, letters, or writing anywhere in the image. Square composition.`,
   ].join(" ");
 }
 
@@ -34,6 +39,7 @@ export default async function handler(req: Request): Promise<Response> {
   let body: {
     registrationId: string;
     childName: string;
+    gender: string;
     aspiration: string;
     subject: string;
     problem: string;
@@ -46,7 +52,7 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: "Invalid request body" }, 400);
   }
 
-  const { registrationId, childName, aspiration, subject, problem, selfDescription } = body;
+  const { registrationId, childName, gender, aspiration, subject, problem, selfDescription } = body;
   if (!registrationId) return json({ error: "registrationId required" }, 400);
 
   const openai = new OpenAI({ apiKey: openaiKey });
@@ -58,6 +64,7 @@ export default async function handler(req: Request): Promise<Response> {
       model: "dall-e-3",
       prompt: buildPrompt(
         childName || "a child",
+        gender || "child",
         aspiration || "something great",
         subject || "learning",
         problem || "the world",
