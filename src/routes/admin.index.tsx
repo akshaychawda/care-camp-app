@@ -149,7 +149,9 @@ function Dashboard() {
         ) : filtered.length === 0 ? (
           <div className="px-5 py-10 text-center text-sm text-muted-foreground">
             {sessions.length === 0
-              ? "No camps yet. Create one to get started."
+              ? profile?.role === "cho"
+                ? "No camps have been shared with you yet. Ask your CO to share a camp with you."
+                : "No camps yet. Create one to get started."
               : "No camps match these filters."}
           </div>
         ) : (
