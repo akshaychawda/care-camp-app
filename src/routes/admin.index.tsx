@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Plus, Users, Sparkles, Calendar } from "lucide-react";
 import { Route as AdminRoute } from "@/routes/admin";
-import { getSessions, getCampOwners, type CampSession } from "@/lib/api";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { getSessions, getCampOwners, getRegistrationTimeline, type CampSession } from "@/lib/api";
 import type { Profile } from "@/lib/supabase";
 
 export const Route = createFileRoute("/admin/")({
@@ -53,6 +54,7 @@ function Dashboard() {
   const [status, setStatus] = useState<"all" | "open" | "closed">("all");
   const [ownerId, setOwnerId] = useState("all");
   const [owners, setOwners] = useState<Profile[]>([]);
+  const [timeline, setTimeline] = useState<{ date: string; count: number }[]>([]);
 
   useEffect(() => {
     getSessions()
@@ -64,6 +66,17 @@ function Dashboard() {
   useEffect(() => {
     getCampOwners().then(setOwners).catch(() => {});
   }, []);
+
+  useEffect(() => {
+    getRegistrationTimeline({
+      city: city === "all" ? undefined : city,
+      area: area === "all" ? undefined : area,
+      isOpen: status === "all" ? undefined : status === "open",
+      ownerId: ownerId === "all" ? undefined : ownerId,
+    })
+      .then(setTimeline)
+      .catch(() => {});
+  }, [city, area, status, ownerId]);
 
   const cities = useMemo(() => Array.from(new Set(sessions.map((s) => s.city))).sort(), [sessions]);
   const areas = useMemo(
@@ -89,6 +102,19 @@ function Dashboard() {
       }),
     [sessions, city, area, status, ownerId, owners],
   );
+
+  const avgDuration = useMemo(() => {
+    const closed = sessions.filter((s) => s.closed_at);
+    if (closed.length === 0) return null;
+    const totalMs = closed.reduce((sum, s) => {
+      return sum + (new Date(s.closed_at!).getTime() - new Date(s.created_at).getTime());
+    }, 0);
+    const avgMin = Math.round(totalMs / closed.length / 60000);
+    if (avgMin < 60) return { text: `${avgMin}m`, count: closed.length };
+    const h = Math.floor(avgMin / 60);
+    const m = avgMin % 60;
+    return { text: m > 0 ? `${h}h ${m}m` : `${h}h`, count: closed.length };
+  }, [sessions]);
 
   const totals = useMemo(
     () => ({
@@ -130,6 +156,50 @@ function Dashboard() {
         <Stat label="Total Camps" value={totals.camps} icon={Calendar} />
         <Stat label="Parents" value={totals.parents} icon={Users} />
         <Stat label="Dream Cards" value={totals.cards} icon={Sparkles} />
+      </div>
+
+      {avgDuration && (profile?.role === "super_admin" || profile?.role === "mad_employee") && (
+        <p className="text-sm text-muted-foreground mb-4">
+          Avg camp duration:{" "}
+          <span className="font-semibold text-foreground">{avgDuration.text}</span>
+          <span className="ml-1">
+            · based on {avgDuration.count} closed camp{avgDuration.count !== 1 ? "s" : ""}
+          </span>
+        </p>
+      )}
+
+      <div className="bg-card border border-border rounded-xl p-5 mb-6">
+        <h2 className="font-semibold text-foreground mb-4">Registrations — last 30 days</h2>
+        {timeline.every((d) => d.count === 0) ? (
+          <p className="text-sm text-muted-foreground text-center py-8">
+            No registrations in the last 30 days.
+          </p>
+        ) : (
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart data={timeline} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 10 }}
+                tickFormatter={(d: string) => {
+                  const date = new Date(d + "T00:00:00");
+                  return `${date.getDate()}/${date.getMonth() + 1}`;
+                }}
+                interval={4}
+              />
+              <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+              <Tooltip
+                formatter={(value: number) => [value, "Registrations"]}
+                labelFormatter={(label: string) =>
+                  new Date(label + "T00:00:00").toLocaleDateString("en-IN", {
+                    day: "numeric",
+                    month: "short",
+                  })
+                }
+              />
+              <Bar dataKey="count" fill="var(--primary)" radius={[3, 3, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
       <div className="bg-card rounded-xl border border-border overflow-hidden">
@@ -204,6 +274,9 @@ function Dashboard() {
                   <div className="font-semibold text-foreground">
                     {s.city} — {s.area}
                   </div>
+                  {s.owner_name && (
+                    <div className="text-xs text-muted-foreground mt-0.5">{s.owner_name}</div>
+                  )}
                   <div className="flex flex-wrap items-center gap-2 mt-2">
                     <Tag icon={<Calendar className="h-3 w-3" />}>
                       {new Date(s.date + "T00:00:00").toLocaleDateString("en-IN", {
@@ -245,6 +318,7 @@ function Dashboard() {
                 <thead className="bg-secondary/60 text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="text-left font-semibold px-5 py-3">Camp</th>
+                    <th className="text-left font-semibold px-5 py-3">Owner</th>
                     <th className="text-left font-semibold px-5 py-3">Date</th>
                     <th className="text-left font-semibold px-5 py-3">Status</th>
                     <th className="text-right font-semibold px-5 py-3">Parents</th>
@@ -258,6 +332,7 @@ function Dashboard() {
                       <td className="px-5 py-3 font-semibold text-foreground">
                         {s.city} — {s.area}
                       </td>
+                      <td className="px-5 py-3 text-muted-foreground text-sm">{s.owner_name || "—"}</td>
                       <td className="px-5 py-3 text-muted-foreground tabular-nums">
                         {new Date(s.date + "T00:00:00").toLocaleDateString("en-IN", {
                           day: "numeric",
