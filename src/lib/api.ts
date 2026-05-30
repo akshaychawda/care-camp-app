@@ -55,9 +55,12 @@ export async function createSession(
   chapter: string,
   date: string,
 ): Promise<CampSession> {
+  const {
+    data: { session: authSession },
+  } = await supabase.auth.getSession();
   const { data, error } = await supabase
     .from("camp_sessions")
-    .insert({ city, chapter, date })
+    .insert({ city, chapter, date, created_by: authSession?.user.id })
     .select()
     .single();
   if (error) throw error;
@@ -204,4 +207,57 @@ export async function enableUser(id: string): Promise<void> {
 export async function updateUserRole(id: string, role: UserRole): Promise<void> {
   const { error } = await supabase.from("profiles").update({ role }).eq("id", id);
   if (error) throw error;
+}
+
+// ─── Camp Collaborators ────────────────────────────────────────────────────────
+
+export type Collaborator = {
+  user_id: string;
+  full_name: string;
+  role: UserRole;
+};
+
+export async function getCampCollaborators(campId: string): Promise<Collaborator[]> {
+  const { data, error } = await supabase
+    .from("camp_collaborators")
+    .select("user_id, profiles(full_name, role)")
+    .eq("camp_session_id", campId);
+  if (error) throw error;
+  return (data ?? []).map((d) => ({
+    user_id: d.user_id,
+    full_name: (d.profiles as { full_name: string; role: UserRole } | null)?.full_name ?? "",
+    role: (d.profiles as { full_name: string; role: UserRole } | null)?.role ?? "cho",
+  }));
+}
+
+export async function addCampCollaborator(campId: string, userId: string): Promise<void> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const { error } = await supabase.from("camp_collaborators").insert({
+    camp_session_id: campId,
+    user_id: userId,
+    granted_by: session?.user.id,
+  });
+  if (error) throw error;
+}
+
+export async function removeCampCollaborator(campId: string, userId: string): Promise<void> {
+  const { error } = await supabase
+    .from("camp_collaborators")
+    .delete()
+    .eq("camp_session_id", campId)
+    .eq("user_id", userId);
+  if (error) throw error;
+}
+
+export async function getShareableUsers(): Promise<Profile[]> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("status", "active")
+    .in("role", ["co", "cho"])
+    .order("full_name");
+  if (error) throw error;
+  return data ?? [];
 }

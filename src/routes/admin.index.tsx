@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, Plus, Users, Sparkles, Calendar, MapPin } from "lucide-react";
+import { Route as AdminRoute } from "@/routes/admin";
 import { getSessions, type CampSession } from "@/lib/api";
 
 export const Route = createFileRoute("/admin/")({
@@ -40,6 +41,9 @@ function Stat({
 }
 
 function Dashboard() {
+  const { profile } = AdminRoute.useRouteContext();
+  const canCreateCamp = profile?.role !== "cho";
+
   const [sessions, setSessions] = useState<CampSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,15 +85,21 @@ function Dashboard() {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">Care Camps Dashboard</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Monitor activity across all chapters.
+            {profile?.role === "cho"
+              ? "Camps shared with you."
+              : profile?.role === "co"
+                ? "Your camps and camps shared with you."
+                : "Monitor activity across all chapters."}
           </p>
         </div>
-        <Link
-          to="/admin/new"
-          className="inline-flex items-center gap-2 h-11 px-4 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition shrink-0"
-        >
-          <Plus className="h-4 w-4" /> <span className="hidden sm:inline">New Camp</span>
-        </Link>
+        {canCreateCamp && (
+          <Link
+            to="/admin/new"
+            className="inline-flex items-center gap-2 h-11 px-4 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition shrink-0"
+          >
+            <Plus className="h-4 w-4" /> <span className="hidden sm:inline">New Camp</span>
+          </Link>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">

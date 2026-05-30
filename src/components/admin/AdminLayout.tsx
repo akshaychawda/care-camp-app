@@ -28,10 +28,14 @@ export function AdminLayout() {
     window.location.href = "/login";
   };
 
-  const canSeeUsers =
-    profile?.role === "super_admin" || profile?.role === "mad_employee";
+  const canSeeUsers = profile?.role === "super_admin" || profile?.role === "mad_employee";
+  const canCreateCamp = profile?.role !== "cho";
 
-  const nav = NAV.filter((item) => item.to !== "/admin/users" || canSeeUsers);
+  const nav = NAV.filter((item) => {
+    if (item.to === "/admin/users") return canSeeUsers;
+    if (item.to === "/admin/new") return canCreateCamp;
+    return true;
+  });
 
   return (
     <div className="admin min-h-screen w-full flex flex-col md:flex-row">

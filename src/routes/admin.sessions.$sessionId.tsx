@@ -1,8 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, CheckCircle2, XCircle, Copy, Check } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, Copy, Check, UserPlus, X } from "lucide-react";
 import QRCode from "qrcode";
-import { getSession, toggleCampStatus, type CampSession, type Registration } from "@/lib/api";
+import {
+  getSession,
+  toggleCampStatus,
+  getCampCollaborators,
+  addCampCollaborator,
+  removeCampCollaborator,
+  getShareableUsers,
+  type CampSession,
+  type Registration,
+  type Collaborator,
+} from "@/lib/api";
+import { type Profile } from "@/lib/supabase";
+import { Route as AdminRoute } from "@/routes/admin";
 
 export const Route = createFileRoute("/admin/sessions/$sessionId")({
   component: SessionDetail,
@@ -24,6 +36,106 @@ function StatBlock({ label, value }: { label: string; value: string | number }) 
         {label}
       </div>
       <div className="text-lg font-bold text-foreground mt-1 tabular-nums">{value}</div>
+    </div>
+  );
+}
+
+const ROLE_LABEL: Record<string, string> = {
+  co: "CO",
+  cho: "CHO",
+  mad_employee: "MAD Staff",
+  super_admin: "Super Admin",
+};
+
+function SharePanel({ campId }: { campId: string }) {
+  const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+  const [users, setUsers] = useState<Profile[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [removing, setRemoving] = useState<string | null>(null);
+
+  useEffect(() => {
+    getCampCollaborators(campId).then(setCollaborators).catch(() => {});
+    getShareableUsers().then(setUsers).catch(() => {});
+  }, [campId]);
+
+  const collaboratorIds = new Set(collaborators.map((c) => c.user_id));
+  const available = users.filter((u) => !collaboratorIds.has(u.id));
+
+  const handleAdd = async () => {
+    if (!selectedUserId) return;
+    setAdding(true);
+    try {
+      await addCampCollaborator(campId, selectedUserId);
+      const added = users.find((u) => u.id === selectedUserId);
+      if (added) setCollaborators((prev) => [...prev, { user_id: added.id, full_name: added.full_name, role: added.role }]);
+      setSelectedUserId("");
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const handleRemove = async (userId: string) => {
+    setRemoving(userId);
+    try {
+      await removeCampCollaborator(campId, userId);
+      setCollaborators((prev) => prev.filter((c) => c.user_id !== userId));
+    } finally {
+      setRemoving(null);
+    }
+  };
+
+  return (
+    <div className="bg-card border border-border rounded-lg p-4 space-y-3">
+      <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+        Share Camp
+      </div>
+
+      {collaborators.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No one else has access yet.</p>
+      ) : (
+        <ul className="space-y-2">
+          {collaborators.map((c) => (
+            <li key={c.user_id} className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <div className="text-sm font-medium text-foreground truncate">{c.full_name || "Unnamed"}</div>
+                <div className="text-xs text-muted-foreground">{ROLE_LABEL[c.role] ?? c.role}</div>
+              </div>
+              <button
+                onClick={() => handleRemove(c.user_id)}
+                disabled={removing === c.user_id}
+                className="shrink-0 p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition disabled:opacity-40"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {available.length > 0 && (
+        <div className="flex gap-2">
+          <select
+            value={selectedUserId}
+            onChange={(e) => setSelectedUserId(e.target.value)}
+            className="flex-1 h-9 px-2 rounded-lg border border-border bg-input text-sm min-w-0"
+          >
+            <option value="">Add person…</option>
+            {available.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.full_name || u.id.slice(0, 8)} ({ROLE_LABEL[u.role] ?? u.role})
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={handleAdd}
+            disabled={!selectedUserId || adding}
+            className="shrink-0 h-9 w-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-40 hover:opacity-90 transition"
+          >
+            <UserPlus className="h-4 w-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -85,6 +197,9 @@ function CampQR({ sessionId }: { sessionId: string }) {
 
 function SessionDetail() {
   const { sessionId } = Route.useParams();
+  const { profile } = AdminRoute.useRouteContext();
+  const canManageCamp = profile?.role !== "cho";
+
   const [session, setSession] = useState<CampSession | null>(null);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
@@ -158,17 +273,19 @@ function SessionDetail() {
         >
           {isOpen ? "Open" : "Closed"}
         </span>
-        <button
-          onClick={handleToggle}
-          disabled={toggling || isOpen === null}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border-2 disabled:opacity-40 transition ${
-            isOpen
-              ? "border-red-400 text-red-400 hover:bg-red-400/10"
-              : "border-emerald-400 text-emerald-400 hover:bg-emerald-400/10"
-          }`}
-        >
-          {toggling ? "Saving…" : isOpen ? "Close Camp" : "Reopen Camp"}
-        </button>
+        {canManageCamp && (
+          <button
+            onClick={handleToggle}
+            disabled={toggling || isOpen === null}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border-2 disabled:opacity-40 transition ${
+              isOpen
+                ? "border-red-400 text-red-400 hover:bg-red-400/10"
+                : "border-emerald-400 text-emerald-400 hover:bg-emerald-400/10"
+            }`}
+          >
+            {toggling ? "Saving…" : isOpen ? "Close Camp" : "Reopen Camp"}
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -180,6 +297,7 @@ function SessionDetail() {
           <StatBlock label="City" value={session.city} />
           <StatBlock label="Chapter" value={session.chapter} />
           <CampQR sessionId={sessionId} />
+          {canManageCamp && <SharePanel campId={sessionId} />}
         </aside>
 
         {/* Registrations column */}
