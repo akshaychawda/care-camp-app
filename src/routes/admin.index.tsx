@@ -57,15 +57,6 @@ function Dashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  const totals = useMemo(
-    () => ({
-      camps: sessions.length,
-      parents: sessions.reduce((a, s) => a + s.parent_count, 0),
-      cards: sessions.reduce((a, s) => a + s.card_count, 0),
-    }),
-    [sessions],
-  );
-
   const cities = useMemo(() => Array.from(new Set(sessions.map((s) => s.city))).sort(), [sessions]);
   const chapters = useMemo(
     () =>
@@ -75,8 +66,21 @@ function Dashboard() {
     [city, sessions],
   );
 
-  const filtered = sessions.filter(
-    (s) => (city === "all" || s.city === city) && (chapter === "all" || s.chapter === chapter),
+  const filtered = useMemo(
+    () =>
+      sessions.filter(
+        (s) => (city === "all" || s.city === city) && (chapter === "all" || s.chapter === chapter),
+      ),
+    [sessions, city, chapter],
+  );
+
+  const totals = useMemo(
+    () => ({
+      camps: filtered.length,
+      parents: filtered.reduce((a, s) => a + s.parent_count, 0),
+      cards: filtered.reduce((a, s) => a + s.card_count, 0),
+    }),
+    [filtered],
   );
 
   return (
