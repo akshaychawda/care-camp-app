@@ -29,6 +29,15 @@ export const Route = createFileRoute("/admin/sessions/$sessionId")({
   ),
 });
 
+function formatDuration(startIso: string, endIso: string | null): string {
+  const endMs = endIso ? new Date(endIso).getTime() : Date.now();
+  const totalMin = Math.round((endMs - new Date(startIso).getTime()) / 60000);
+  if (totalMin < 60) return `${totalMin}m`;
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
 function StatBlock({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="bg-card border border-border rounded-lg px-4 py-3">
@@ -301,7 +310,7 @@ function SessionDetail() {
       </Link>
 
       <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-        {session.city} — {session.chapter} — {dateStr}
+        {session.city} — {session.area} — {dateStr}
       </h1>
 
       <div className="flex items-center gap-3 mb-6">
@@ -327,6 +336,39 @@ function SessionDetail() {
         )}
       </div>
 
+      {session.parent_count > 0 && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-6 text-sm text-muted-foreground">
+          <span>
+            <span className="font-semibold text-foreground">{session.parent_count}</span> parents
+          </span>
+          <span>·</span>
+          <span>
+            <span className="font-semibold text-foreground">
+              {Math.round((session.card_count / session.parent_count) * 100)}%
+            </span>{" "}
+            got cards
+          </span>
+          <span>·</span>
+          <span>
+            {session.closed_at ? (
+              <>
+                Ran for{" "}
+                <span className="font-semibold text-foreground">
+                  {formatDuration(session.created_at, session.closed_at)}
+                </span>
+              </>
+            ) : (
+              <>
+                Open for{" "}
+                <span className="font-semibold text-foreground">
+                  {formatDuration(session.created_at, null)}
+                </span>
+              </>
+            )}
+          </span>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Stats + QR column */}
         <aside className="md:col-span-1 space-y-3">
@@ -334,7 +376,8 @@ function SessionDetail() {
           <StatBlock label="Cards Generated" value={session.card_count} />
           <StatBlock label="Date" value={dateStr} />
           <StatBlock label="City" value={session.city} />
-          <StatBlock label="Chapter" value={session.chapter} />
+          <StatBlock label="Area" value={session.area} />
+          {session.venue && <StatBlock label="Venue" value={session.venue} />}
           <CampQR sessionId={sessionId} />
           {canManageCamp && <SharePanel campId={sessionId} />}
         </aside>
