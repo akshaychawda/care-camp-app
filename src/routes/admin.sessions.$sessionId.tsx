@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, CheckCircle2, XCircle, Copy, Check, UserPlus, X } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, Copy, Check, UserPlus, X, RefreshCw } from "lucide-react";
 import QRCode from "qrcode";
 import {
   getSession,
@@ -207,6 +207,16 @@ function SessionDetail() {
   const [isOpen, setIsOpen] = useState<boolean | null>(null);
   const [toggling, setToggling] = useState(false);
 
+  const loadRegistrations = async () => {
+    if (!sessionId) return;
+    try {
+      const { registrations: regs } = await getSession(sessionId);
+      setRegistrations(regs);
+    } catch {
+      // silent — don't overwrite existing data on refresh failure
+    }
+  };
+
   useEffect(() => {
     getSession(sessionId)
       .then(({ session, registrations }) => {
@@ -217,6 +227,12 @@ function SessionDetail() {
       .catch((e) => setError(e.message ?? "Failed to load camp"))
       .finally(() => setLoading(false));
   }, [sessionId]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const id = setInterval(loadRegistrations, 30_000);
+    return () => clearInterval(id);
+  }, [isOpen]);
 
   const handleToggle = async () => {
     if (isOpen === null) return;
@@ -302,11 +318,20 @@ function SessionDetail() {
 
         {/* Registrations column */}
         <section className="md:col-span-2 bg-card border border-border rounded-xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-border">
-            <h2 className="font-semibold text-foreground">Registrations</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {registrations.length} registered
-            </p>
+          <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+            <div>
+              <h2 className="font-semibold text-foreground">Registrations</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {registrations.length} registered
+              </p>
+            </div>
+            <button
+              onClick={loadRegistrations}
+              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition"
+              title="Refresh registrations"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
           </div>
 
           {registrations.length === 0 ? (
