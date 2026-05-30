@@ -168,7 +168,7 @@ function Dashboard() {
                   </div>
                   <div className="flex flex-wrap items-center gap-2 mt-2">
                     <Tag icon={<Calendar className="h-3 w-3" />}>
-                      {new Date(s.date).toLocaleDateString("en-IN", {
+                      {new Date(s.date + "T00:00:00").toLocaleDateString("en-IN", {
                         day: "numeric",
                         month: "short",
                         year: "numeric",
@@ -220,7 +220,7 @@ function Dashboard() {
                       </td>
                       <td className="px-5 py-3 text-muted-foreground">{s.chapter}</td>
                       <td className="px-5 py-3 text-muted-foreground tabular-nums">
-                        {new Date(s.date).toLocaleDateString("en-IN", {
+                        {new Date(s.date + "T00:00:00").toLocaleDateString("en-IN", {
                           day: "numeric",
                           month: "short",
                           year: "numeric",

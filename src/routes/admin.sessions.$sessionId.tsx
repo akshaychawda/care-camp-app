@@ -246,7 +246,7 @@ function SessionDetail() {
       </div>
     );
 
-  const dateStr = new Date(session.date).toLocaleDateString("en-IN", {
+  const dateStr = new Date(session.date + "T00:00:00").toLocaleDateString("en-IN", {
     day: "numeric",
     month: "short",
     year: "numeric",

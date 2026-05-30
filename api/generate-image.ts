@@ -21,6 +21,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (!registrationId) return res.status(400).json({ error: "registrationId required" });
 
+  const supabase = createClient(supabaseUrl, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  // Verify registrationId exists + return cached image if already generated (idempotency)
+  const { data: registration, error: regError } = await supabase
+    .from("parent_registrations")
+    .select("id, image_url")
+    .eq("id", registrationId)
+    .single();
+
+  if (regError || !registration) {
+    return res.status(404).json({ error: "Registration not found" });
+  }
+
+  if (registration.image_url) {
+    return res.status(200).json({ imageUrl: registration.image_url, caption: null });
+  }
+
   const name = childName || "a child";
   const genderWord = gender === "girl" ? "girl" : gender === "boy" ? "boy" : "child";
 
@@ -103,10 +122,6 @@ Respond with JSON only: {"scene_prompt": "...", "caption": "..."}`,
   }
 
   // Step 3: Upload to Supabase Storage
-  const supabase = createClient(supabaseUrl, serviceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-
   let publicUrl: string;
   try {
     const fileName = `${registrationId}.png`;

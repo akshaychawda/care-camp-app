@@ -5,6 +5,7 @@ import dreamCard from "@/assets/dream-card.jpg";
 import { registerParentAndChild, getCampStatus } from "@/lib/api";
 
 type Step =
+  | "checking"
   | "no-session"
   | "camp-closed"
   | "welcome"
@@ -194,14 +195,43 @@ function Field({
   );
 }
 
+const INDIAN_MOBILE = /^[6-9]\d{9}$/;
+
+function PhoneField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const invalid = value.length > 0 && !INDIAN_MOBILE.test(value);
+  return (
+    <label className="block">
+      <span className="block text-sm font-semibold text-foreground/80 mb-2 px-1">Phone Number</span>
+      <input
+        type="tel"
+        inputMode="numeric"
+        value={value}
+        onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 10))}
+        placeholder="10-digit mobile number"
+        className={`w-full h-14 px-4 rounded-2xl bg-input border-2 outline-none text-lg transition placeholder:text-muted-foreground/60 ${
+          invalid ? "border-destructive focus:border-destructive" : "border-transparent focus:border-primary focus:bg-card"
+        }`}
+      />
+      {invalid && (
+        <p className="mt-1.5 px-1 text-xs text-destructive">
+          Enter a valid 10-digit Indian mobile number (starts with 6–9)
+        </p>
+      )}
+    </label>
+  );
+}
+
 async function generateDreamCard(
   registrationId: string,
   data: FormData,
 ): Promise<{ imageUrl: string | null; caption: string | null }> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 60_000);
   try {
     const res = await fetch("/api/generate-image", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      signal: controller.signal,
       body: JSON.stringify({
         registrationId,
         childName: data.childName,
@@ -217,11 +247,13 @@ async function generateDreamCard(
     return { imageUrl: imageUrl ?? null, caption: caption ?? null };
   } catch {
     return { imageUrl: null, caption: null };
+  } finally {
+    clearTimeout(timeout);
   }
 }
 
 export function DreamFlow({ sessionId }: { sessionId?: string }) {
-  const [step, setStep] = useState<Step>(sessionId ? "welcome" : "no-session");
+  const [step, setStep] = useState<Step>(sessionId ? "checking" : "no-session");
   const [data, setData] = useState<FormData>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -260,14 +292,17 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
     }
   };
 
-  // Check if camp is open; redirect to closed screen if not
+  // Check camp status before showing any content — blocks at "checking" step until resolved
   useEffect(() => {
     if (!sessionId) return;
     getCampStatus(sessionId)
       .then(({ is_open }) => {
-        if (!is_open) setStep("camp-closed");
+        setStep(is_open ? "welcome" : "camp-closed");
       })
-      .catch(() => {}); // silent — proceed normally if check fails
+      .catch(() => {
+        // If check fails, proceed to welcome — better to let through than block
+        setStep("welcome");
+      });
   }, [sessionId]);
 
 
@@ -275,7 +310,7 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
     setData((d) => ({ ...d, [k]: v }));
 
   const showBack =
-    step !== "welcome" && step !== "loading" && step !== "no-session" && step !== "camp-closed";
+    step !== "checking" && step !== "welcome" && step !== "loading" && step !== "no-session" && step !== "camp-closed";
   const qIndex = step.startsWith("q") ? Number(step.slice(1)) : 0;
   const progress = qIndex ? { current: qIndex, total: 5 } : undefined;
 
@@ -284,6 +319,8 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
       <Header onBack={showBack ? back : undefined} progress={progress} />
 
       <div className="flex-1 flex flex-col px-6 pb-8">
+        {step === "checking" && <Checking />}
+
         {step === "no-session" && <NoSession />}
 
         {step === "camp-closed" && <CampClosed />}
@@ -293,7 +330,7 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
         {step === "parent" && (
           <ScreenForm
             heading="First, a little about you"
-            canContinue={!!(data.parentName && data.phone && data.area)}
+            canContinue={!!(data.parentName && /^[6-9]\d{9}$/.test(data.phone) && data.area)}
             onContinue={() => go("child")}
           >
             <Field
@@ -303,12 +340,9 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
               placeholder="Your name"
               autoFocus
             />
-            <Field
-              label="Phone Number"
+            <PhoneField
               value={data.phone}
               onChange={(v) => update("phone", v)}
-              placeholder="10-digit mobile"
-              type="tel"
             />
             <Field
               label="City"
@@ -405,6 +439,15 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
           />
         )}
       </div>
+    </div>
+  );
+}
+
+function Checking() {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center text-center px-8">
+      <Logo className="h-14 mb-12" />
+      <Loader2 className="h-10 w-10 animate-spin text-primary" />
     </div>
   );
 }
@@ -555,7 +598,27 @@ function Question({
   );
 }
 
+const LOADING_MESSAGES = [
+  "We're painting",
+  "Adding finishing touches to",
+  "Almost ready —",
+];
+const LOADING_SUFFIXES = [
+  "'s dream…",
+  "'s dream card…",
+  "'s masterpiece…",
+];
+
 function Loading({ childName }: { childName: string }) {
+  const [msgIdx, setMsgIdx] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setMsgIdx((i) => Math.min(i + 1, LOADING_MESSAGES.length - 1));
+    }, 15_000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <div className="flex-1 flex flex-col items-center justify-center text-center">
       <div className="relative mb-12">
@@ -565,7 +628,7 @@ function Loading({ childName }: { childName: string }) {
         </div>
       </div>
       <h2 className="text-3xl font-bold leading-tight max-w-[320px]">
-        We're painting <span className="text-primary">{childName}</span>'s dream…
+        {LOADING_MESSAGES[msgIdx]} <span className="text-primary">{childName}</span>{LOADING_SUFFIXES[msgIdx]}
       </h2>
       <p className="mt-4 text-base text-muted-foreground">This will just take a moment ✨</p>
     </div>

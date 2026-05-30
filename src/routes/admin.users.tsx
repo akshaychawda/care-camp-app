@@ -11,6 +11,7 @@ import {
   updateUserRole,
 } from "@/lib/api";
 import type { Profile, UserRole } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/admin/users")({
   component: UsersPage,
@@ -129,6 +130,7 @@ function UserRow({
   onRoleChange: (id: string, role: UserRole) => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const [pendingRole, setPendingRole] = useState<UserRole>(user.role);
   const canManage = currentRole === "super_admin" ||
     (currentRole === "mad_employee" && user.role !== "super_admin" && user.role !== "mad_employee");
 
@@ -139,11 +141,14 @@ function UserRow({
     setBusy(false);
   };
 
-  const changeRole = async (newRole: UserRole) => {
+  const saveRole = async () => {
+    if (pendingRole === user.role) return;
     setBusy(true);
-    await onRoleChange(user.id, newRole);
+    await onRoleChange(user.id, pendingRole);
     setBusy(false);
   };
+
+  const roleDirty = pendingRole !== user.role;
 
   return (
     <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
@@ -159,8 +164,8 @@ function UserRow({
       {canManage && (
         <div className="flex items-center gap-2 shrink-0">
           <select
-            value={user.role}
-            onChange={(e) => changeRole(e.target.value as UserRole)}
+            value={pendingRole}
+            onChange={(e) => setPendingRole(e.target.value as UserRole)}
             disabled={busy}
             className="h-9 px-2 rounded-lg border border-border bg-input text-xs font-medium text-foreground"
           >
@@ -169,6 +174,16 @@ function UserRow({
             <option value="mad_employee">MAD Employee</option>
             {currentRole === "super_admin" && <option value="super_admin">Super Admin</option>}
           </select>
+          {roleDirty && (
+            <button
+              onClick={saveRole}
+              disabled={busy}
+              className="h-9 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center gap-1.5 hover:opacity-90 transition disabled:opacity-40"
+            >
+              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+              Save
+            </button>
+          )}
           <button
             onClick={toggle}
             disabled={busy}
@@ -210,9 +225,14 @@ function InviteModal({
     setLoading(true);
     setError(null);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
       const res = await fetch("/api/invite-user", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ email, full_name: name }),
       });
       if (!res.ok) {
