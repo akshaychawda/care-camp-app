@@ -76,7 +76,7 @@ function Dashboard() {
   );
 
   return (
-    <div className="px-5 md:px-10 py-6 md:py-10 max-w-6xl">
+    <div className="px-5 md:px-10 py-6 md:py-10 w-full">
       <div className="flex items-start justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">Care Camps Dashboard</h1>
