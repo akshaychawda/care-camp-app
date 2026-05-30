@@ -173,7 +173,7 @@ function Confirmation({
   };
 
   const share = () => {
-    const text = `Join the MAD Care Camp — ${data.session.city} (${data.session.chapter}) on ${new Date(data.session.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}: ${data.link}`;
+    const text = `Join the MAD Care Camp — ${data.session.city} (${data.session.chapter}) on ${new Date(data.session.date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}: ${data.link}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
   };
 
@@ -195,7 +195,7 @@ function Confirmation({
           {data.session.city} — {data.session.chapter}
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
-          {new Date(data.session.date).toLocaleDateString("en-IN", {
+          {new Date(data.session.date + "T00:00:00").toLocaleDateString("en-IN", {
             day: "numeric",
             month: "long",
             year: "numeric",
