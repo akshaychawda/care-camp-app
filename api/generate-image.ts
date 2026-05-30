@@ -3,28 +3,6 @@ import OpenAI from "openai";
 
 export const config = { runtime: "edge" };
 
-function buildPrompt(
-  childName: string,
-  gender: string,
-  aspiration: string,
-  subject: string,
-  problem: string,
-  selfDescription: string,
-): string {
-  const genderDesc = gender === "girl" ? "young Indian girl" : gender === "boy" ? "young Indian boy" : "young Indian child";
-  const pronoun = gender === "girl" ? "her" : gender === "boy" ? "his" : "their";
-  return [
-    `A vibrant, joyful digital illustration of a ${genderDesc} named ${childName} living ${pronoun} dream.`,
-    `The child is shown as a ${aspiration} — depict them actively in this role or clearly on the path to it.`,
-    `They love ${subject}: weave this into the scene naturally.`,
-    `They want to help with ${problem} in the world — let the image feel purposeful and hopeful.`,
-    `They are ${selfDescription}.`,
-    `Style: warm Indian colors, uplifting digital art, empowering and celebratory mood.`,
-    `Make the aspiration visually unmistakable in the scene.`,
-    `No text, letters, or writing anywhere in the image. Square composition.`,
-  ].join(" ");
-}
-
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
 
@@ -55,42 +33,74 @@ export default async function handler(req: Request): Promise<Response> {
   const { registrationId, childName, gender, aspiration, subject, problem, selfDescription } = body;
   if (!registrationId) return json({ error: "registrationId required" }, 400);
 
+  const name = childName || "a child";
+  const genderWord = gender === "girl" ? "girl" : gender === "boy" ? "boy" : "child";
+
   const openai = new OpenAI({ apiKey: openaiKey });
 
-  // Generate image + caption in parallel
-  let dalleUrl: string;
+  // Step 1: GPT designs a concrete scene + writes the caption
+  let scenePrompt: string;
   let caption: string;
   try {
-    const [imageResponse, captionResponse] = await Promise.all([
-      openai.images.generate({
-        model: "dall-e-3",
-        prompt: buildPrompt(
-          childName || "a child",
-          gender || "child",
-          aspiration || "something great",
-          subject || "learning",
-          problem || "the world",
-          selfDescription || "brave",
-        ),
-        size: "1024x1024",
-        quality: "standard",
-        n: 1,
-      }),
-      openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "user",
-            content: `Write one short, poetic, inspiring sentence (under 20 words) about a child named ${childName || "this child"} who dreams of becoming a ${aspiration || "changemaker"} and wants to help with ${problem || "the world"}. Use their first name. Make it uplifting and beautiful.`,
-          },
-        ],
-        max_tokens: 60,
-      }),
-    ]);
-    dalleUrl = imageResponse.data[0].url!;
-    caption = captionResponse.choices[0].message.content?.trim().replace(/^["']|["']$/g, "") ?? "";
+    const plan = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You design image prompts for DALL-E and write captions for children's dream cards at community events in India. Output only valid JSON.",
+        },
+        {
+          role: "user",
+          content: `Child details:
+- Name: ${name}
+- Gender: ${genderWord}
+- Wants to become: ${aspiration || "someone great"}
+- Loves: ${subject || "learning"}
+- Wants to fix: ${problem || "problems in the world"}
+- One word to describe themselves: ${selfDescription || "brave"}
+
+Task 1 — scene_prompt: Write a 60–80 word DALL-E image prompt.
+Rules:
+- Show the ${genderWord} ACTIVELY doing their job RIGHT NOW, not wishing or reaching for stars
+- Describe the exact setting, what they are doing, what objects are around them
+- Weave in their love for "${subject}" visually somewhere in the scene
+- Indian cultural context — clothing, environment, people
+- Warm, vibrant, joyful, celebratory digital art
+- End with: "No text or writing anywhere. Square composition."
+
+Task 2 — caption: One beautiful, poetic sentence under 20 words. Use the child's name ${name}. Reference their aspiration and the change they'll make. Avoid clichés like "reach for the stars".
+
+Respond with JSON: {"scene_prompt": "...", "caption": "..."}`,
+        },
+      ],
+      max_tokens: 300,
+      response_format: { type: "json_object" },
+    });
+
+    const parsed = JSON.parse(plan.choices[0].message.content ?? "{}");
+    scenePrompt = parsed.scene_prompt ?? "";
+    caption = (parsed.caption ?? "").replace(/^["']|["']$/g, "");
   } catch (err) {
-    console.error("Generation error:", err);
+    console.error("GPT planning error:", err);
+    // Fallback prompt if GPT fails
+    scenePrompt = `A vibrant scene of a ${genderWord} in India actively working as a ${aspiration || "changemaker"}, surrounded by elements of ${subject || "their passion"}. Warm Indian colors, joyful atmosphere. No text. Square composition.`;
+    caption = "";
+  }
+
+  // Step 2: DALL-E generates the image using the scene GPT designed
+  let dalleUrl: string;
+  try {
+    const imageResponse = await openai.images.generate({
+      model: "dall-e-3",
+      prompt: scenePrompt,
+      size: "1024x1024",
+      quality: "standard",
+      n: 1,
+    });
+    dalleUrl = imageResponse.data[0].url!;
+  } catch (err) {
+    console.error("DALL-E error:", err);
     return json({ error: "Image generation failed" }, 500);
   }
 
