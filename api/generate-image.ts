@@ -54,7 +54,7 @@ Rules:
 - Describe the exact setting, what they are doing, specific objects around them
 - Weave in their love for "${subject}" visually somewhere in the scene
 - Indian cultural context — clothing, environment
-- Warm, vibrant, joyful, celebratory digital art style
+- Style: soft watercolor illustration, children's book style, painterly brushstrokes, warm muted palette, gentle and dreamy, slightly stylized figures — NOT photorealistic, NOT 3D render, NOT cartoon
 - End with: "No text or writing anywhere. Square composition."
 
 Task 2 — caption: One beautiful, poetic sentence under 20 words. Use ${name}. Reference their aspiration and the difference they will make. No clichés.
