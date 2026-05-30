@@ -260,6 +260,7 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [caption, setCaption] = useState<string | null>(null);
   const [sessionCity, setSessionCity] = useState<string>("");
+  const [imageGenFailed, setImageGenFailed] = useState(false);
 
   const idx = ORDER.indexOf(step);
   const go = (s: Step) => setStep(s);
@@ -285,6 +286,7 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
       const { imageUrl: url, caption: cap } = await generateDreamCard(registration.id, data);
       setImageUrl(url);
       setCaption(cap);
+      setImageGenFailed(!url);
       go("reveal");
     } catch (err: unknown) {
       setSaveError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
@@ -439,6 +441,7 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
             problem={data.q3 || "the world"}
             imageUrl={imageUrl}
             caption={caption}
+            genFailed={imageGenFailed}
             onNext={() => go("next")}
           />
         )}
@@ -458,6 +461,7 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
               setImageUrl(null);
               setCaption(null);
               setSaveError(null);
+              setImageGenFailed(false);
               go("child");
             }}
           />
@@ -665,6 +669,7 @@ function Reveal({
   problem,
   imageUrl,
   caption,
+  genFailed,
   onNext,
 }: {
   childName: string;
@@ -672,6 +677,7 @@ function Reveal({
   problem: string;
   imageUrl: string | null;
   caption: string | null;
+  genFailed: boolean;
   onNext: () => void;
 }) {
   const article = /^[aeiou]/i.test(dream) ? "an" : "a";
@@ -704,6 +710,13 @@ function Reveal({
   return (
     <div className="flex flex-col">
       <h2 className="text-2xl font-bold mb-4 text-center">{childName}'s Dream Card</h2>
+
+      {genFailed && (
+        <div className="mb-4 px-4 py-3 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 text-sm leading-relaxed">
+          We couldn't create {childName}'s personalised card right now — the image service was busy.
+          A default card is shown below. Your volunteer can help you try again later.
+        </div>
+      )}
 
       <div className="relative rounded-3xl overflow-hidden shadow-card bg-gradient-card">
         <img
