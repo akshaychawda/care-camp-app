@@ -754,20 +754,56 @@ function Reveal({
 }
 
 function NextChild({ childName, imageUrl, onNext }: { childName: string; imageUrl: string | null; onNext: () => void }) {
+  const handleDownload = async () => {
+    if (!imageUrl) return;
+    try {
+      const res = await fetch(imageUrl);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${childName}-dream-card.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      const a = document.createElement("a");
+      a.href = imageUrl;
+      a.download = `${childName}-dream-card.png`;
+      a.click();
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col items-center justify-center text-center">
-      <div className="relative mb-10">
+      <div className="relative mb-6">
         <div className="absolute inset-0 bg-whatsapp/30 rounded-full blur-3xl" />
-        <div className="relative h-32 w-32 rounded-full bg-whatsapp flex items-center justify-center shadow-warm text-5xl">
+        <div className="relative h-20 w-20 rounded-full bg-whatsapp flex items-center justify-center shadow-warm text-4xl">
           🌟
         </div>
       </div>
-      <h2 className="text-3xl font-bold leading-tight max-w-[320px]">
+      <h2 className="text-2xl font-bold leading-tight max-w-[320px]">
         Done! <span className="text-primary">{childName}</span>'s card is ready.
       </h2>
-      <p className="mt-4 text-base text-muted-foreground">
+      <p className="mt-3 text-base text-muted-foreground">
         Thank you for being part of this moment.
       </p>
+
+      {imageUrl && (
+        <div className="mt-6 w-full max-w-[240px] rounded-2xl overflow-hidden border border-border shadow-card">
+          <img
+            src={imageUrl}
+            alt={`${childName}'s dream card`}
+            className="w-full aspect-square object-cover"
+          />
+          <button
+            onClick={handleDownload}
+            className="w-full py-2.5 bg-card text-primary text-sm font-semibold flex items-center justify-center gap-2 hover:bg-secondary transition"
+          >
+            <Download className="h-4 w-4" /> Download {childName}'s card
+          </button>
+        </div>
+      )}
+
       <div className="flex-1" />
       <div className="w-full pt-8">
         <PrimaryButton onClick={onNext}>
