@@ -245,7 +245,6 @@ function Dashboard() {
                 <thead className="bg-secondary/60 text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="text-left font-semibold px-5 py-3">Camp</th>
-                    <th className="text-left font-semibold px-5 py-3">Area</th>
                     <th className="text-left font-semibold px-5 py-3">Date</th>
                     <th className="text-left font-semibold px-5 py-3">Status</th>
                     <th className="text-right font-semibold px-5 py-3">Parents</th>
@@ -259,7 +258,6 @@ function Dashboard() {
                       <td className="px-5 py-3 font-semibold text-foreground">
                         {s.city} — {s.area}
                       </td>
-                      <td className="px-5 py-3 text-muted-foreground">{s.area}</td>
                       <td className="px-5 py-3 text-muted-foreground tabular-nums">
                         {new Date(s.date + "T00:00:00").toLocaleDateString("en-IN", {
                           day: "numeric",
