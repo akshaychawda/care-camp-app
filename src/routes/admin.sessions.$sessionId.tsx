@@ -155,6 +155,7 @@ function CardYesNo({ ok }: { ok: boolean }) {
 function CampQR({ sessionId }: { sessionId: string }) {
   const [qr, setQr] = useState("");
   const [copied, setCopied] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const campLink = `${window.location.origin}/?session=${sessionId}`;
 
   useEffect(() => {
@@ -170,28 +171,50 @@ function CampQR({ sessionId }: { sessionId: string }) {
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg p-4 space-y-3">
-      <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-        Camp QR Code
+    <>
+      {fullscreen && (
+        <div
+          className="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center cursor-pointer"
+          onClick={() => setFullscreen(false)}
+        >
+          {qr ? (
+            <img src={qr} alt="Camp QR code" className="w-72 h-72 rounded-2xl" />
+          ) : (
+            <div className="w-72 h-72 rounded-2xl bg-secondary animate-pulse" />
+          )}
+          <p className="mt-6 text-sm text-gray-500">Tap anywhere to close</p>
+        </div>
+      )}
+
+      <div className="bg-card border border-border rounded-lg p-4 space-y-3">
+        <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+          Camp QR Code
+        </div>
+        <div className="flex justify-center">
+          {qr ? (
+            <img src={qr} alt="Camp QR code" className="w-40 h-40 rounded-lg" />
+          ) : (
+            <div className="w-40 h-40 rounded-lg bg-secondary animate-pulse" />
+          )}
+        </div>
+        <code className="block text-xs text-muted-foreground break-all bg-secondary px-2 py-1.5 rounded">
+          {campLink}
+        </code>
+        <button
+          onClick={() => setFullscreen(true)}
+          className="w-full h-9 rounded-lg bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition"
+        >
+          Show to parent ↗
+        </button>
+        <button
+          onClick={copy}
+          className="w-full h-9 rounded-lg border-2 border-primary text-primary font-semibold text-sm flex items-center justify-center gap-2 hover:bg-primary/5 transition"
+        >
+          {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+          {copied ? "Copied!" : "Copy Link"}
+        </button>
       </div>
-      <div className="flex justify-center">
-        {qr ? (
-          <img src={qr} alt="Camp QR code" className="w-40 h-40 rounded-lg" />
-        ) : (
-          <div className="w-40 h-40 rounded-lg bg-secondary animate-pulse" />
-        )}
-      </div>
-      <code className="block text-xs text-muted-foreground break-all bg-secondary px-2 py-1.5 rounded">
-        {campLink}
-      </code>
-      <button
-        onClick={copy}
-        className="w-full h-9 rounded-lg border-2 border-primary text-primary font-semibold text-sm flex items-center justify-center gap-2 hover:bg-primary/5 transition"
-      >
-        {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-        {copied ? "Copied!" : "Copy Link"}
-      </button>
-    </div>
+    </>
   );
 }
 
