@@ -1,6 +1,59 @@
 # CLAUDE.md — Care Camps App
 
 ## What this is
+Mobile web app for MAD (Make A Difference NGO) India. Parents scan a QR code at a Care Camp event, answer 5 aspiration questions about their child, and receive an AI-generated watercolor dream card. Internal staff manage camps via an authenticated dashboard.
+
+**First camp: 2026-06-06. App is live at https://mad-care-camps.vercel.app**
+
+## Stack
+- **Frontend:** React + TypeScript + TanStack Router, Vite SPA
+- **Hosting:** Vercel Pro
+- **Database + Auth:** Supabase Pro (`etrlbxugodyvexzsyfdk.supabase.co`)
+- **Email:** Brevo SMTP (sender: akshay.chawda@makeadiff.in)
+- **AI:** GPT-4o-mini (scene design + caption) → gpt-image-2 (watercolor illustration)
+- **Storage:** Supabase Storage bucket `dream-cards`
+
+## Roles
+| Role | Who | Access |
+|------|-----|--------|
+| `super_admin` | Akshay + leads | Everything |
+| `mad_employee` | MAD staff | All camps, approve users |
+| `co` | Chapter Organizers | Own + assigned + shared camps |
+| `cho` | Community Health Organizers | Shared camps only, read-only |
+| *(none)* | Parents | Public unauthenticated flow |
+
+## Open bugs — fix in this order before 2026-06-06
+1. **C4** `src/routes/admin.users.tsx` InviteModal — add `Authorization: Bearer <token>` header (invite broken)
+2. **C3** `src/components/DreamFlow.tsx` — add `"checking"` initial step to prevent race condition on camp-closed redirect
+3. **C1** `api/generate-image.ts` — verify registrationId in DB before generating; return cached URL if card_generated=true
+4. **I1** `src/components/DreamFlow.tsx` — add 60s AbortController timeout to generateDreamCard fetch
+5. **I2** `src/components/DreamFlow.tsx` Loading — cycle messages every 15s ("We're painting…" → "Adding touches…" → "Almost ready…")
+6. **C2** `src/components/DreamFlow.tsx` parent step — phone validation `/^[6-9]\d{9}$/`
+7. **I5** `src/routes/admin.users.tsx` UserRow — add Save button; don't fire updateUserRole on onChange
+8. **M6** date timezone — `new Date(s.date + "T00:00:00")` in dashboard + session detail
+
+## SDLC workflow
+```
+New feature   → /brainstorming first
+Task list     → /executing-plans
+After feature → /requesting-code-review
+Before "done" → /verification-before-completion
+Hit a bug     → /systematic-debugging
+```
+
+## Commands
+```bash
+npm run dev      # local dev
+npm run build    # build (run before committing)
+git push origin main  # triggers Vercel auto-deploy
+```
+
+## Environment variables (set in Vercel)
+- `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` — client-side Supabase
+- `SUPABASE_SERVICE_ROLE_KEY` — server-side only (API functions)
+- `OPENAI_API_KEY` — gpt-4o-mini + gpt-image-2
+
+## Original What this is (kept for context)
 Mobile web app for MAD Care Camp entry events. A parent/child pair answers aspiration questions, the app generates an AI image card of the child's dream, and delivers it to the parent's WhatsApp. MAD coordinators monitor activity via an admin dashboard.
 
 Full PRD: `docs/prd.md` — read this before planning or building anything.
