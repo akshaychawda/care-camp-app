@@ -190,23 +190,49 @@ function Field({
   );
 }
 
+async function generateDreamCard(
+  registrationId: string,
+  data: FormData,
+): Promise<string | null> {
+  try {
+    const res = await fetch("/api/generate-image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        registrationId,
+        childName: data.childName,
+        aspiration: data.q1,
+        subject: data.q2,
+        problem: data.q3,
+        selfDescription: data.q5,
+      }),
+    });
+    if (!res.ok) return null;
+    const { imageUrl } = await res.json();
+    return imageUrl ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function DreamFlow({ sessionId }: { sessionId?: string }) {
   const [step, setStep] = useState<Step>(sessionId ? "welcome" : "no-session");
   const [data, setData] = useState<FormData>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   const idx = ORDER.indexOf(step);
   const go = (s: Step) => setStep(s);
   const back = () => setStep(ORDER[Math.max(idx - 1, 0)]);
 
-  // Save to Supabase when all questions are answered and we enter loading
+  // Save registration then generate image
   const submitAndAdvance = async () => {
     if (!sessionId) return;
     setSaving(true);
     setSaveError(null);
     try {
-      await registerParentAndChild({
+      const registration = await registerParentAndChild({
         sessionId,
         parentName: data.parentName,
         phone: data.phone,
@@ -216,6 +242,10 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
         answers: [data.q1, data.q2, data.q3, data.q4, data.q5],
       });
       go("loading");
+      // Generate image while loading screen shows — fallback to null on failure
+      const url = await generateDreamCard(registration.id, data);
+      setImageUrl(url);
+      go("reveal");
     } catch (err: unknown) {
       setSaveError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
@@ -233,13 +263,6 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
       .catch(() => {}); // silent — proceed normally if check fails
   }, [sessionId]);
 
-  // Loading auto-advance to reveal
-  useEffect(() => {
-    if (step === "loading") {
-      const t = setTimeout(() => setStep("reveal"), 3000);
-      return () => clearTimeout(t);
-    }
-  }, [step]);
 
   const update = <K extends keyof FormData>(k: K, v: FormData[K]) =>
     setData((d) => ({ ...d, [k]: v }));
@@ -335,6 +358,7 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
             childName={data.childName || "Your child"}
             dream={data.q1 || "something wonderful"}
             problem={data.q3 || "the world"}
+            imageUrl={imageUrl}
             onNext={() => go("next")}
           />
         )}
@@ -343,8 +367,8 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
           <NextChild
             childName={data.childName || "Your child"}
             onNext={() => {
-              // Keep session context but reset all form data
               setData({ ...EMPTY });
+              setImageUrl(null);
               setSaveError(null);
               go("parent");
             }}
@@ -522,11 +546,13 @@ function Reveal({
   childName,
   dream,
   problem,
+  imageUrl,
   onNext,
 }: {
   childName: string;
   dream: string;
   problem: string;
+  imageUrl: string | null;
   onNext: () => void;
 }) {
   const caption =
@@ -534,11 +560,24 @@ function Reveal({
       ? `${childName} dreams of becoming a ${dream.toLowerCase()} and making ${problem.toLowerCase()} better.`
       : `${childName} dreams of becoming a ${(dream || "changemaker").toLowerCase()}.`;
 
-  const handleDownload = () => {
-    const a = document.createElement("a");
-    a.href = dreamCard;
-    a.download = `${childName}-dream-card.jpg`;
-    a.click();
+  const src = imageUrl ?? dreamCard;
+
+  const handleDownload = async () => {
+    try {
+      const res = await fetch(src);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${childName}-dream-card.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      const a = document.createElement("a");
+      a.href = src;
+      a.download = `${childName}-dream-card.png`;
+      a.click();
+    }
   };
 
   return (
@@ -547,7 +586,7 @@ function Reveal({
 
       <div className="relative rounded-3xl overflow-hidden shadow-card bg-gradient-card">
         <img
-          src={dreamCard}
+          src={src}
           alt={`${childName}'s dream illustration`}
           width={1024}
           height={1024}
