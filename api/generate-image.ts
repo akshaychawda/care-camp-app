@@ -92,7 +92,7 @@ Respond with JSON: {"scene_prompt": "...", "caption": "..."}`,
   let imageBuffer: ArrayBuffer;
   try {
     const imageResponse = await openai.images.generate({
-      model: "gpt-image-1",
+      model: "gpt-image-2",
       prompt: scenePrompt,
       size: "1024x1024",
       quality: "standard",
