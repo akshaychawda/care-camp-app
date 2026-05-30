@@ -144,7 +144,7 @@ export async function markCardGenerated(registrationId: string): Promise<void> {
 }
 
 export async function toggleCampStatus(id: string, isOpen: boolean): Promise<void> {
-  const update: Record<string, unknown> = { is_open: isOpen };
+  const update: { is_open: boolean; closed_at?: string } = { is_open: isOpen };
   if (!isOpen) update.closed_at = new Date().toISOString();
   const { error } = await supabase.from("camp_sessions").update(update).eq("id", id);
   if (error) throw error;
