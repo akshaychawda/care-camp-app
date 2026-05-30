@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Plus, Users, Sparkles, Calendar, MapPin } from "lucide-react";
+import { ArrowRight, Plus, Users, Sparkles, Calendar } from "lucide-react";
 import { Route as AdminRoute } from "@/routes/admin";
 import { getSessions, type CampSession } from "@/lib/api";
 
@@ -180,6 +180,15 @@ function Dashboard() {
                         year: "numeric",
                       })}
                     </Tag>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${
+                        s.is_open
+                          ? "bg-emerald-500/15 text-emerald-400"
+                          : "bg-secondary text-muted-foreground"
+                      }`}
+                    >
+                      {s.is_open ? "● Open" : "Closed"}
+                    </span>
                   </div>
                   <div className="flex items-center gap-5 mt-4 pt-3 border-t border-border">
                     <div>
@@ -204,9 +213,9 @@ function Dashboard() {
                 <thead className="bg-secondary/60 text-xs uppercase tracking-wider text-muted-foreground">
                   <tr>
                     <th className="text-left font-semibold px-5 py-3">Camp</th>
-                    <th className="text-left font-semibold px-5 py-3">City</th>
                     <th className="text-left font-semibold px-5 py-3">Chapter</th>
                     <th className="text-left font-semibold px-5 py-3">Date</th>
+                    <th className="text-left font-semibold px-5 py-3">Status</th>
                     <th className="text-right font-semibold px-5 py-3">Parents</th>
                     <th className="text-right font-semibold px-5 py-3">Cards</th>
                     <th className="text-right font-semibold px-5 py-3">Actions</th>
@@ -218,12 +227,6 @@ function Dashboard() {
                       <td className="px-5 py-3 font-semibold text-foreground">
                         {s.city} — {s.chapter}
                       </td>
-                      <td className="px-5 py-3 text-muted-foreground">
-                        <span className="inline-flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {s.city}
-                        </span>
-                      </td>
                       <td className="px-5 py-3 text-muted-foreground">{s.chapter}</td>
                       <td className="px-5 py-3 text-muted-foreground tabular-nums">
                         {new Date(s.date + "T00:00:00").toLocaleDateString("en-IN", {
@@ -231,6 +234,17 @@ function Dashboard() {
                           month: "short",
                           year: "numeric",
                         })}
+                      </td>
+                      <td className="px-5 py-3">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${
+                            s.is_open
+                              ? "bg-emerald-500/15 text-emerald-400"
+                              : "bg-secondary text-muted-foreground"
+                          }`}
+                        >
+                          {s.is_open ? "● Open" : "Closed"}
+                        </span>
                       </td>
                       <td className="px-5 py-3 text-right font-bold tabular-nums">
                         {s.parent_count}
