@@ -5,12 +5,15 @@ import { supabase, type Profile, type UserRole } from "./supabase";
 export type CampSession = {
   id: string;
   city: string;
-  chapter: string;
+  area: string;
+  venue: string | null;
   date: string;
   created_at: string;
+  closed_at: string | null;
   is_open: boolean;
   parent_count: number;
   card_count: number;
+  owner_name: string | null;
 };
 
 export type Registration = {
@@ -31,28 +34,35 @@ function toSession(
   raw: {
     id: string;
     city: string;
-    chapter: string;
+    area: string;
+    venue: string | null;
     date: string;
     created_at: string;
+    closed_at: string | null;
     is_open: boolean;
+    profiles?: { full_name: string } | null;
   },
   regs: { card_generated: boolean }[],
 ): CampSession {
   return {
     id: raw.id,
     city: raw.city,
-    chapter: raw.chapter,
+    area: raw.area,
+    venue: raw.venue ?? null,
     date: raw.date,
     created_at: raw.created_at,
+    closed_at: raw.closed_at ?? null,
     is_open: raw.is_open,
     parent_count: regs.length,
     card_count: regs.filter((r) => r.card_generated).length,
+    owner_name: (raw.profiles as { full_name: string } | null)?.full_name ?? null,
   };
 }
 
 export async function createSession(
   city: string,
-  chapter: string,
+  area: string,
+  venue: string,
   date: string,
 ): Promise<CampSession> {
   const {
@@ -60,8 +70,8 @@ export async function createSession(
   } = await supabase.auth.getSession();
   const { data, error } = await supabase
     .from("camp_sessions")
-    .insert({ city, chapter, date, created_by: authSession?.user.id })
-    .select()
+    .insert({ city, area, venue: venue || null, date, created_by: authSession?.user.id })
+    .select("*, profiles!created_by(full_name)")
     .single();
   if (error) throw error;
   return toSession(data, []);
@@ -70,10 +80,9 @@ export async function createSession(
 export async function getSessions(): Promise<CampSession[]> {
   const { data, error } = await supabase
     .from("camp_sessions")
-    .select("*, parent_registrations(id, card_generated)")
+    .select("*, parent_registrations(id, card_generated), profiles!created_by(full_name)")
     .order("date", { ascending: false });
   if (error) throw error;
-
   return (data ?? []).map((s) => toSession(s, s.parent_registrations ?? []));
 }
 
@@ -82,11 +91,10 @@ export async function getSession(
 ): Promise<{ session: CampSession; registrations: Registration[] }> {
   const { data, error } = await supabase
     .from("camp_sessions")
-    .select("*, parent_registrations(*)")
+    .select("*, parent_registrations(*), profiles!created_by(full_name)")
     .eq("id", id)
     .single();
   if (error) throw error;
-
   const registrations: Registration[] = data.parent_registrations ?? [];
   return { session: toSession(data, registrations), registrations };
 }
@@ -136,7 +144,9 @@ export async function markCardGenerated(registrationId: string): Promise<void> {
 }
 
 export async function toggleCampStatus(id: string, isOpen: boolean): Promise<void> {
-  const { error } = await supabase.from("camp_sessions").update({ is_open: isOpen }).eq("id", id);
+  const update: Record<string, unknown> = { is_open: isOpen };
+  if (!isOpen) update.closed_at = new Date().toISOString();
+  const { error } = await supabase.from("camp_sessions").update(update).eq("id", id);
   if (error) throw error;
 }
 
