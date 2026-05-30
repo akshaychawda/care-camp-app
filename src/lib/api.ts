@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { supabase, type Profile, type UserRole } from "./supabase";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -145,4 +145,63 @@ export async function getCampStatus(id: string): Promise<{ is_open: boolean }> {
     .single();
   if (error) throw error;
   return { is_open: data.is_open };
+}
+
+// ─── User Management ──────────────────────────────────────────────────────────
+
+export async function getPendingUsers(): Promise<Profile[]> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("status", "pending")
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getAllUsers(): Promise<Profile[]> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .neq("status", "pending")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getPendingCount(): Promise<number> {
+  const { count, error } = await supabase
+    .from("profiles")
+    .select("*", { count: "exact", head: true })
+    .eq("status", "pending");
+  if (error) return 0;
+  return count ?? 0;
+}
+
+export async function approveUser(id: string, role: UserRole): Promise<void> {
+  const { error } = await supabase
+    .from("profiles")
+    .update({ status: "active", role })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function rejectUser(id: string): Promise<void> {
+  const { error } = await supabase.from("profiles").update({ status: "rejected" }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function disableUser(id: string): Promise<void> {
+  const { error } = await supabase.from("profiles").update({ status: "disabled" }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function enableUser(id: string): Promise<void> {
+  const { error } = await supabase.from("profiles").update({ status: "active" }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function updateUserRole(id: string, role: UserRole): Promise<void> {
+  const { error } = await supabase.from("profiles").update({ role }).eq("id", id);
+  if (error) throw error;
 }
