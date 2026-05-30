@@ -88,36 +88,38 @@ Respond with JSON: {"scene_prompt": "...", "caption": "..."}`,
     caption = "";
   }
 
-  // Step 2: DALL-E generates the image using the scene GPT designed
-  let dalleUrl: string;
+  // Step 2: Generate the image using the scene GPT designed
+  let imageBuffer: ArrayBuffer;
   try {
     const imageResponse = await openai.images.generate({
-      model: "dall-e-3",
+      model: "gpt-image-1",
       prompt: scenePrompt,
       size: "1024x1024",
       quality: "standard",
       n: 1,
     });
-    dalleUrl = imageResponse.data[0].url!;
+    // gpt-image-1 returns base64
+    const b64 = imageResponse.data[0].b64_json!;
+    const binary = atob(b64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    imageBuffer = bytes.buffer;
   } catch (err) {
-    console.error("DALL-E error:", err);
+    console.error("Image generation error:", err);
     return json({ error: "Image generation failed" }, 500);
   }
 
-  // Download and upload to Supabase Storage
+  // Upload to Supabase Storage
   const supabase = createClient(supabaseUrl, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
   let publicUrl: string;
   try {
-    const imgResponse = await fetch(dalleUrl);
-    const buffer = await imgResponse.arrayBuffer();
-
     const fileName = `${registrationId}.png`;
     const { error: uploadError } = await supabase.storage
       .from("dream-cards")
-      .upload(fileName, buffer, { contentType: "image/png", upsert: true });
+      .upload(fileName, imageBuffer, { contentType: "image/png", upsert: true });
 
     if (uploadError) throw uploadError;
 
