@@ -48,14 +48,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 - Wants to fix: ${problem || "problems in the world"}
 - One word to describe themselves: ${selfDescription || "brave"}
 
-Task 1 — scene_prompt: Write a 60–80 word image prompt.
+Task 1 — scene_prompt: Describe ONLY the scene content in 40–60 words. No style words at all — just what is happening.
 Rules:
 - Show the ${genderWord} ACTIVELY doing their job RIGHT NOW — not dreaming, not wishing, not reaching for stars
 - Describe the exact setting, what they are doing, specific objects around them
 - Weave in their love for "${subject}" visually somewhere in the scene
-- Indian cultural context — clothing, environment
-- Style: soft watercolor illustration, children's book style, painterly brushstrokes, warm muted palette, gentle and dreamy, slightly stylized figures — NOT photorealistic, NOT 3D render, NOT cartoon
-- End with: "No text or writing anywhere. Square composition."
+- Indian cultural context — clothing, environment, people around them
 
 Task 2 — caption: One beautiful, poetic sentence under 20 words. Use ${name}. Reference their aspiration and the difference they will make. No clichés.
 
@@ -80,9 +78,19 @@ Respond with JSON only: {"scene_prompt": "...", "caption": "..."}`,
   // Step 2: Generate the image
   let imageBuffer: Buffer;
   try {
+    const styleOverride = [
+      "Illustration style: soft watercolor painting.",
+      "Loose expressive brushstrokes, visible watercolor washes, painterly edges.",
+      "Warm muted colour palette — ochres, soft reds, dusty greens, gentle yellows.",
+      "Children's picture book illustration quality.",
+      "Gentle, warm, slightly dreamy mood.",
+      "NOT a photograph. NOT photorealistic. NOT CGI. NOT 3D render. NOT digital art.",
+      "No text or writing anywhere in the image. Square composition.",
+    ].join(" ");
+
     const imageResponse = await openai.images.generate({
       model: "gpt-image-2",
-      prompt: scenePrompt,
+      prompt: `${scenePrompt} ${styleOverride}`,
       size: "1024x1024",
       quality: "medium",
       n: 1,
