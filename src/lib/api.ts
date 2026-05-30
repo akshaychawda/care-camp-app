@@ -140,14 +140,14 @@ export async function toggleCampStatus(id: string, isOpen: boolean): Promise<voi
   if (error) throw error;
 }
 
-export async function getCampStatus(id: string): Promise<{ is_open: boolean }> {
+export async function getCampStatus(id: string): Promise<{ is_open: boolean; city: string }> {
   const { data, error } = await supabase
     .from("camp_sessions")
-    .select("is_open")
+    .select("is_open, city")
     .eq("id", id)
     .single();
   if (error) throw error;
-  return { is_open: data.is_open };
+  return { is_open: data.is_open, city: data.city ?? "" };
 }
 
 // ─── User Management ──────────────────────────────────────────────────────────

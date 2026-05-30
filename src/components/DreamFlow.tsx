@@ -259,6 +259,7 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [caption, setCaption] = useState<string | null>(null);
+  const [sessionCity, setSessionCity] = useState<string>("");
 
   const idx = ORDER.indexOf(step);
   const go = (s: Step) => setStep(s);
@@ -296,12 +297,19 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
   useEffect(() => {
     if (!sessionId) return;
     getCampStatus(sessionId)
-      .then(({ is_open }) => {
+      .then(({ is_open, city }) => {
+        setSessionCity(city);
+        if (city) {
+          setData((d) => ({ ...d, city }));
+        }
         setStep(is_open ? "welcome" : "camp-closed");
       })
-      .catch(() => {
-        // If check fails, proceed to welcome — better to let through than block
-        setStep("welcome");
+      .catch((err) => {
+        if (err?.code === "PGRST116") {
+          setStep("no-session");
+        } else {
+          setStep("welcome");
+        }
       });
   }, [sessionId]);
 
@@ -344,12 +352,21 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
               value={data.phone}
               onChange={(v) => update("phone", v)}
             />
-            <Field
-              label="City"
-              value={data.city}
-              onChange={(v) => update("city", v)}
-              placeholder="e.g. Pune"
-            />
+            {sessionCity ? (
+              <div>
+                <span className="block text-sm font-semibold text-foreground/80 mb-2 px-1">City</span>
+                <div className="w-full h-14 px-4 rounded-2xl bg-secondary border-2 border-transparent text-lg flex items-center text-foreground/70">
+                  {sessionCity}
+                </div>
+              </div>
+            ) : (
+              <Field
+                label="City"
+                value={data.city}
+                onChange={(v) => update("city", v)}
+                placeholder="e.g. Pune"
+              />
+            )}
             <Field
               label="Neighbourhood / Area"
               value={data.area}
