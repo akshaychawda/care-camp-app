@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Check, X, UserCheck, UserX, RefreshCw, UserPlus, Loader2 } from "lucide-react";
 import {
   getPendingUsers,
@@ -144,8 +145,14 @@ function UserRow({
   const saveRole = async () => {
     if (pendingRole === user.role) return;
     setBusy(true);
-    await onRoleChange(user.id, pendingRole);
-    setBusy(false);
+    try {
+      await onRoleChange(user.id, pendingRole);
+      toast.success("Role updated");
+    } catch {
+      toast.error("Something went wrong");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const roleDirty = pendingRole !== user.role;
@@ -337,22 +344,42 @@ function UsersPage() {
   useEffect(() => { load(); }, []);
 
   const handleApprove = async (id: string, role: UserRole) => {
-    await approveUser(id, role);
+    try {
+      await approveUser(id, role);
+      toast.success("User approved");
+    } catch {
+      toast.error("Something went wrong");
+    }
     await load();
   };
 
   const handleReject = async (id: string) => {
-    await rejectUser(id);
+    try {
+      await rejectUser(id);
+      toast.success("Request rejected");
+    } catch {
+      toast.error("Something went wrong");
+    }
     await load();
   };
 
   const handleDisable = async (id: string) => {
-    await disableUser(id);
+    try {
+      await disableUser(id);
+      toast.success("User disabled");
+    } catch {
+      toast.error("Something went wrong");
+    }
     await load();
   };
 
   const handleEnable = async (id: string) => {
-    await enableUser(id);
+    try {
+      await enableUser(id);
+      toast.success("User enabled");
+    } catch {
+      toast.error("Something went wrong");
+    }
     await load();
   };
 

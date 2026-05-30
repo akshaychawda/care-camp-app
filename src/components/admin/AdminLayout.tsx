@@ -5,6 +5,7 @@ import madLogo from "@/assets/mad-logo.png";
 import { signOut } from "@/lib/auth";
 import { getPendingCount } from "@/lib/api";
 import { Route } from "@/routes/admin";
+import { Toaster } from "@/components/ui/sonner";
 
 const NAV = [
   { label: "Dashboard", to: "/admin", icon: LayoutDashboard, exact: true },
@@ -147,6 +148,7 @@ export function AdminLayout() {
           })}
         </div>
       </nav>
+      <Toaster />
     </div>
   );
 }

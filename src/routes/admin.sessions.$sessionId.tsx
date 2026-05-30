@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { ArrowLeft, CheckCircle2, XCircle, Copy, Check, UserPlus, X, RefreshCw } from "lucide-react";
 import QRCode from "qrcode";
 import {
@@ -79,6 +80,9 @@ function SharePanel({ campId }: { campId: string }) {
       const added = users.find((u) => u.id === selectedUserId);
       if (added) setCollaborators((prev) => [...prev, { user_id: added.id, full_name: added.full_name, role: added.role }]);
       setSelectedUserId("");
+      toast.success("Access granted");
+    } catch {
+      toast.error("Failed to add access");
     } finally {
       setAdding(false);
     }
@@ -89,6 +93,9 @@ function SharePanel({ campId }: { campId: string }) {
     try {
       await removeCampCollaborator(campId, userId);
       setCollaborators((prev) => prev.filter((c) => c.user_id !== userId));
+      toast.success("Access removed");
+    } catch {
+      toast.error("Failed to remove access");
     } finally {
       setRemoving(null);
     }
@@ -176,6 +183,7 @@ function CampQR({ sessionId }: { sessionId: string }) {
   const copy = async () => {
     await navigator.clipboard.writeText(campLink).catch(() => {});
     setCopied(true);
+    toast.success("Link copied!");
     setTimeout(() => setCopied(false), 1800);
   };
 
