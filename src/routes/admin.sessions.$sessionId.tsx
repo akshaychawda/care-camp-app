@@ -421,6 +421,9 @@ function SessionDetail() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="font-semibold text-foreground">{r.name}</div>
+                        <div className="text-sm text-muted-foreground mt-0.5">
+                          Child: <span className="font-medium text-foreground">{r.child_name}</span>
+                        </div>
                         <div className="text-sm text-muted-foreground tabular-nums mt-0.5">
                           {r.phone}
                         </div>
@@ -438,6 +441,7 @@ function SessionDetail() {
                   <thead className="bg-secondary/60 text-xs uppercase tracking-wider text-muted-foreground">
                     <tr>
                       <th className="text-left font-semibold px-5 py-3">Name</th>
+                      <th className="text-left font-semibold px-5 py-3">Child</th>
                       <th className="text-left font-semibold px-5 py-3">Phone</th>
                       <th className="text-left font-semibold px-5 py-3">Neighbourhood</th>
                       <th className="text-left font-semibold px-5 py-3">Card Generated</th>
@@ -447,6 +451,7 @@ function SessionDetail() {
                     {registrations.map((r) => (
                       <tr key={r.id} className="hover:bg-secondary/30">
                         <td className="px-5 py-3 font-medium text-foreground">{r.name}</td>
+                        <td className="px-5 py-3 text-muted-foreground">{r.child_name}</td>
                         <td className="px-5 py-3 text-muted-foreground tabular-nums">{r.phone}</td>
                         <td className="px-5 py-3 text-muted-foreground">{r.area}</td>
                         <td className="px-5 py-3">
