@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { PageGuide } from "@/components/admin/PageGuide";
 import { Check, X, UserCheck, UserX, RefreshCw, UserPlus, Loader2 } from "lucide-react";
 import {
   getPendingUsers,
@@ -521,6 +522,7 @@ function UsersPage() {
 
   return (
     <div className="px-5 md:px-10 py-6 md:py-10 w-full">
+      <PageGuide pageKey="users" role={currentRole} />
       <div className="flex items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">Users</h1>

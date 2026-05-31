@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, CheckCircle2, XCircle, Copy, Check, UserPlus, X, RefreshCw } from "lucide-react";
+import { PageGuide } from "@/components/admin/PageGuide";
 import QRCode from "qrcode";
 import {
   getSession,
@@ -316,6 +317,7 @@ function SessionDetail() {
       >
         <ArrowLeft className="h-4 w-4" /> Back to Dashboard
       </Link>
+      <PageGuide pageKey="session-detail" role={profile?.role ?? "cho"} />
 
       <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
         {session.city} — {session.area} — {dateStr}

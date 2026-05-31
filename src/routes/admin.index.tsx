@@ -5,6 +5,7 @@ import { Route as AdminRoute } from "@/routes/admin";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { getSessions, getCampOwners, getRegistrationTimeline, type CampSession } from "@/lib/api";
 import type { Profile } from "@/lib/supabase";
+import { PageGuide } from "@/components/admin/PageGuide";
 
 export const Route = createFileRoute("/admin/")({
   component: Dashboard,
@@ -129,6 +130,7 @@ function Dashboard() {
 
   return (
     <div className="px-5 md:px-10 py-6 md:py-10 w-full">
+      <PageGuide pageKey="dashboard" role={profile?.role ?? "cho"} />
       <div className="flex items-start justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">Care Camps Dashboard</h1>
