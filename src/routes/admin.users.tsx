@@ -59,12 +59,13 @@ function PendingRow({
   onApprove: (id: string, role: UserRole) => void;
   onReject: (id: string) => void;
 }) {
-  const [role, setRole] = useState<UserRole>(user.role);
+  const [role, setRole] = useState<UserRole | "">(""); // blank forces conscious selection
   const [busy, setBusy] = useState(false);
 
   const approve = async () => {
+    if (!role) return;
     setBusy(true);
-    await onApprove(user.id, role);
+    await onApprove(user.id, role as UserRole);
     setBusy(false);
   };
 
@@ -75,7 +76,7 @@ function PendingRow({
   };
 
   return (
-    <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
+    <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-start gap-3">
       <div className="flex-1 min-w-0">
         <div className="font-semibold text-foreground">{user.full_name || "—"}</div>
         {user.email && (
@@ -88,10 +89,9 @@ function PendingRow({
             )}
           </div>
         )}
-        <div className="text-sm text-muted-foreground mt-0.5">
-          Requested: <RoleBadge role={user.role} />
-        </div>
-        <div className="text-xs text-muted-foreground mt-1">
+        <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
+          Requested:&nbsp;<RoleBadge role={user.role} />
+          <span className="text-muted-foreground/50">·</span>
           {new Date(user.created_at).toLocaleDateString("en-IN", {
             day: "numeric",
             month: "short",
@@ -99,33 +99,41 @@ function PendingRow({
           })}
         </div>
       </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <select
-          value={role}
-          onChange={(e) => setRole(e.target.value as UserRole)}
-          disabled={busy}
-          className="h-9 px-2 rounded-lg border border-border bg-input text-xs font-medium text-foreground"
-        >
-          <option value="cho">CHO</option>
-          <option value="co">CO</option>
-          <option value="mad_employee">MAD Employee</option>
-          <option value="super_admin">Super Admin</option>
-        </select>
-        <button
-          onClick={approve}
-          disabled={busy}
-          className="h-9 px-3 rounded-lg bg-emerald-600 text-white text-xs font-semibold flex items-center gap-1.5 hover:opacity-90 transition disabled:opacity-40"
-        >
-          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-          Approve
-        </button>
-        <button
-          onClick={reject}
-          disabled={busy}
-          className="h-9 px-3 rounded-lg border-2 border-destructive text-destructive text-xs font-semibold flex items-center gap-1.5 hover:bg-destructive/10 transition disabled:opacity-40"
-        >
-          <X className="h-3.5 w-3.5" /> Reject
-        </button>
+      <div className="flex flex-col sm:items-end gap-2 shrink-0">
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs font-semibold text-muted-foreground">Assign role:</span>
+          <select
+            value={role}
+            onChange={(e) => setRole(e.target.value as UserRole)}
+            disabled={busy}
+            className={`h-9 px-2 rounded-lg border bg-input text-xs font-medium transition ${
+              !role ? "border-amber-400 text-muted-foreground" : "border-border text-foreground"
+            }`}
+          >
+            <option value="" disabled>Select role…</option>
+            <option value="cho">CHO</option>
+            <option value="co">CO</option>
+            <option value="mad_employee">MAD Employee</option>
+            <option value="super_admin">Super Admin</option>
+          </select>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={approve}
+            disabled={busy || !role}
+            className="h-9 px-3 rounded-lg bg-emerald-600 text-white text-xs font-semibold flex items-center gap-1.5 hover:opacity-90 transition disabled:opacity-40"
+          >
+            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+            Approve
+          </button>
+          <button
+            onClick={reject}
+            disabled={busy}
+            className="h-9 px-3 rounded-lg border-2 border-destructive text-destructive text-xs font-semibold flex items-center gap-1.5 hover:bg-destructive/10 transition disabled:opacity-40"
+          >
+            <X className="h-3.5 w-3.5" /> Reject
+          </button>
+        </div>
       </div>
     </div>
   );
