@@ -9,66 +9,42 @@ const GUIDES: Record<string, GuideContent> = {
   overview: {
     super_admin: [
       {
-        heading: "What you're looking at",
-        body: "All camps across every city and area. Stats at the top update as camps run. Use the filters to narrow by city, area, status, or owner.",
+        heading: "What is this page?",
+        body: "Programme-wide stats — families reached, cards generated, camp counts, and efficiency trends. Use the city or owner filters at the top right to narrow the data.",
       },
       {
-        heading: "Creating a camp",
-        body: "Hit + New Camp (top right). Set the city, area, venue, and date. Once created, open the camp detail to get the QR code to share with your team.",
-      },
-      {
-        heading: "On camp day",
-        body: "Open the camp session. Share the QR link with your CHO. Watch registrations come in live — the table auto-refreshes every 30 seconds.",
-      },
-      {
-        heading: "After camp",
-        body: "Close the camp session when done. The session stays in the list for historical reference.",
+        heading: "Want to create or manage camps?",
+        body: "Go to the Camps page in the sidebar.",
       },
     ],
     mad_employee: [
       {
-        heading: "What you're looking at",
-        body: "All camps across every city and area. Use filters to narrow by city, area, status, or owner.",
+        heading: "What is this page?",
+        body: "Programme-wide stats — families reached, cards generated, and camp activity. Use the city filter to narrow the view.",
       },
       {
-        heading: "Creating a camp",
-        body: "Hit + New Camp (top right). Set the city, area, venue, and date. Open the camp detail to get the QR code.",
-      },
-      {
-        heading: "On camp day",
-        body: "Open the camp, share the QR with your CHO, and watch registrations come in live.",
+        heading: "Want to create or manage camps?",
+        body: "Go to the Camps page in the sidebar.",
       },
     ],
     co: [
       {
-        heading: "What you're looking at",
-        body: "Camps you created or that were shared with you. Camps shared with your CHOs also appear here.",
+        heading: "What is this page?",
+        body: "Stats for your camps — families reached, cards generated, and how long your camps run on average.",
       },
       {
-        heading: "Creating a camp",
-        body: "Hit + New Camp (top right). After creating it, open the camp detail and share the QR link with your CHO before the event.",
-      },
-      {
-        heading: "On camp day",
-        body: "Open the camp session. Share the QR with your CHO — or use the fullscreen QR button yourself. Registrations update live.",
-      },
-      {
-        heading: "After camp",
-        body: "Close the camp when the event ends. It stays visible for your records.",
+        heading: "Want to create or manage camps?",
+        body: "Go to the Camps page in the sidebar.",
       },
     ],
     cho: [
       {
-        heading: "What you're looking at",
-        body: "Camps that your CO has shared with you. You can view but not create camps.",
+        heading: "What is this page?",
+        body: "A summary of the camps shared with you and the families who've registered.",
       },
       {
-        heading: "On camp day",
-        body: "Open the camp and tap the fullscreen QR button. Show the QR to each parent — they scan it to start the registration flow on their phone.",
-      },
-      {
-        heading: "Watching it happen",
-        body: "The registrations table below updates every 30 seconds. You can see each family as they complete the flow.",
+        heading: "Looking for your camp?",
+        body: "Go to the Camps page in the sidebar.",
       },
     ],
   },
@@ -76,34 +52,50 @@ const GUIDES: Record<string, GuideContent> = {
   camps: {
     super_admin: [
       {
-        heading: "Browse all camps",
-        body: "Every camp across all cities and owners. Use + New Camp to create one. Open camps are live — click in to see registrations in real time.",
+        heading: "What is this page?",
+        body: "Every camp across all cities. Open = parents can still register. Closed = event has ended.",
       },
       {
-        heading: "Filters",
-        body: "Filter by Open/Closed status, city, or owner. The two cards at the top always show a live count of open and closed camps.",
+        heading: "Creating a camp",
+        body: "Hit + New Camp. Fill in the city, area, venue, and date. Once created, open the camp to get the QR code to share with your team.",
+      },
+      {
+        heading: "On camp day",
+        body: "Click into the camp → tap Open → share the QR with your CHO. They show it to each parent to scan.",
       },
     ],
     mad_employee: [
       {
-        heading: "Browse all camps",
-        body: "All camps across all cities. Click + New Camp to create one, then share the QR with your CHO before the event.",
+        heading: "What is this page?",
+        body: "Every camp across all cities. Open = parents can still register. Closed = event has ended.",
+      },
+      {
+        heading: "Creating a camp",
+        body: "Hit + New Camp. Fill in the city, area, venue, and date. Open the camp and share the QR with your CHO before the event.",
       },
     ],
     co: [
       {
-        heading: "Your camps",
-        body: "Camps you created or that were shared with you. Create a new camp and share the QR link with your CHO before the event.",
+        heading: "What is this page?",
+        body: "Camps you created, plus camps another CO or admin shared with you.",
+      },
+      {
+        heading: "Creating a camp",
+        body: "Hit + New Camp. After creating it, open the camp and share the QR link with your CHO so they're ready on the day.",
       },
       {
         heading: "On camp day",
-        body: "Open the camp session. The fullscreen QR button lets you show the QR directly to parents.",
+        body: "Open the camp → it goes live. Your CHO shows the QR to parents. Registrations update every 30 seconds.",
       },
     ],
     cho: [
       {
-        heading: "Camps shared with you",
-        body: "Your CO has shared these camps with you. On camp day, open the camp and use the fullscreen QR button to show parents.",
+        heading: "What is this page?",
+        body: "Camps your CO has shared with you. You can view them but not create new ones.",
+      },
+      {
+        heading: "On camp day",
+        body: "Open the camp → tap 'Show QR fullscreen' → hold your phone up for each parent to scan. That's it.",
       },
     ],
   },
@@ -111,26 +103,30 @@ const GUIDES: Record<string, GuideContent> = {
   users: {
     super_admin: [
       {
-        heading: "Two ways people get access",
-        body: "You can invite MAD employees directly using the Invite button. COs and CHOs request access themselves via the login page (mad-care-camps.vercel.app/login) — they appear in Pending Requests.",
+        heading: "Pending",
+        body: "Someone requested access from the login page. Pick their role (CHO, CO, or MAD Employee) and hit Approve — or Reject if you don't recognise them. Non-MAD emails show an amber warning.",
       },
       {
-        heading: "Approving requests",
-        body: "In Pending Requests, confirm their role and hit Approve. Check the email domain — MAD staff should have @makeadiff.in addresses. Non-MAD emails show an amber warning.",
+        heading: "Invited",
+        body: "You sent them a magic link but they haven't signed in yet. Hit Resend if they missed it, or Cancel to revoke.",
       },
       {
-        heading: "Managing existing users",
-        body: "In All Users, you can change roles, disable access, or reinvite someone who was rejected by mistake.",
+        heading: "Active",
+        body: "People with access. You can change their role or disable them if they should no longer have access.",
+      },
+      {
+        heading: "Inviting someone directly",
+        body: "Use the Invite button (top right) to send a magic link to a MAD employee's email.",
       },
     ],
     mad_employee: [
       {
-        heading: "Approving access requests",
-        body: "COs and CHOs request access via the login page and appear in Pending Requests. Confirm their role and hit Approve. Check the email domain — @makeadiff.in addresses are MAD staff.",
+        heading: "Pending",
+        body: "Someone requested access from the login page. Pick their role and hit Approve — or Reject if you don't recognise them.",
       },
       {
-        heading: "All Users tab",
-        body: "Shows everyone with access. You can view their role and status here.",
+        heading: "Active",
+        body: "People who currently have access. You can see their role and status here.",
       },
     ],
   },
@@ -138,50 +134,50 @@ const GUIDES: Record<string, GuideContent> = {
   "session-detail": {
     super_admin: [
       {
-        heading: "Before camp day",
-        body: "Share the camp link or QR code with your CHO. They'll use it on the day to show parents. The camp must be open for parents to register.",
+        heading: "Before the event",
+        body: "Copy the camp link or QR and share it with your CHO. The camp must be Open for parents to register.",
       },
       {
         heading: "On camp day",
-        body: "Keep this page open. Registrations appear in real-time (auto-refresh every 30s). Use the Refresh button to update immediately.",
+        body: "Keep this page open. Each registration appears automatically. Hit Refresh for an instant update.",
       },
       {
-        heading: "Closing the camp",
-        body: "Toggle the camp to Closed when the event ends. Parents with the link will see a 'camp has ended' screen. You can still view all registrations.",
+        heading: "After the event",
+        body: "Toggle the camp to Closed. Parents who try the link will see it's ended. All registrations stay saved.",
       },
     ],
     mad_employee: [
       {
-        heading: "Before camp day",
-        body: "Share the QR or link with your CHO before the event. The camp must be open for parents to register.",
+        heading: "Before the event",
+        body: "Share the QR or camp link with your CHO. The camp must be Open for parents to register.",
       },
       {
         heading: "On camp day",
-        body: "Watch registrations come in live. Hit Refresh or wait for the 30s auto-refresh.",
+        body: "Registrations appear live. Hit Refresh or wait for the 30-second auto-refresh.",
       },
     ],
     co: [
       {
-        heading: "Before camp day",
-        body: "Copy the camp link or show the QR to your CHO. They'll display it to parents on the day.",
+        heading: "Before the event",
+        body: "Copy the camp link or QR and send it to your CHO. The camp must be Open for parents to register.",
       },
       {
         heading: "On camp day",
-        body: "Registrations update every 30 seconds. You can also use the fullscreen QR button yourself if you're at the venue.",
+        body: "Registrations update every 30 seconds. You can also use the fullscreen QR button if you're at the venue.",
       },
       {
-        heading: "Closing the camp",
-        body: "Toggle to Closed when done. Parents with the link will see it's ended.",
+        heading: "After the event",
+        body: "Toggle the camp to Closed when done.",
       },
     ],
     cho: [
       {
         heading: "On camp day",
-        body: "Tap the fullscreen QR button and show it to each parent. They scan it on their phone and go through the registration flow themselves.",
+        body: "Tap 'Show QR fullscreen'. Hold your phone up and let each parent scan the QR. They fill in their details on their own phone — you don't need to touch it.",
       },
       {
-        heading: "Watching in real time",
-        body: "The list below shows each family as they register. It updates every 30 seconds automatically.",
+        heading: "Watching it happen",
+        body: "Each family appears in the list below as they finish. It updates every 30 seconds.",
       },
     ],
   },
@@ -197,9 +193,11 @@ export function PageGuide({ pageKey, role }: { pageKey: string; role: UserRole }
   const storageKey = `guide-collapsed-${pageKey}`;
   const [collapsed, setCollapsed] = useState(() => {
     try {
-      return localStorage.getItem(storageKey) === "true";
+      const stored = localStorage.getItem(storageKey);
+      // Default to collapsed — only expand if user explicitly opened it before
+      return stored === null ? true : stored === "true";
     } catch {
-      return false;
+      return true;
     }
   });
 
