@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Download, Sparkles, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Copy, Check, Download, Sparkles, Loader2 } from "lucide-react";
 import madLogo from "@/assets/mad-logo.png";
 import dreamCard from "@/assets/dream-card.jpg";
 import { registerParentAndChild, getCampStatus } from "@/lib/api";
@@ -261,6 +261,7 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
   const [caption, setCaption] = useState<string | null>(null);
   const [sessionCity, setSessionCity] = useState<string>("");
   const [imageGenFailed, setImageGenFailed] = useState(false);
+  const [registrationId, setRegistrationId] = useState<string | null>(null);
 
   const idx = ORDER.indexOf(step);
   const go = (s: Step) => setStep(s);
@@ -281,6 +282,7 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
         childName: data.childName,
         answers: [data.q1, data.q2, data.q3, data.q4, data.q5],
       });
+      setRegistrationId(registration.id);
       go("loading");
       // Generate image + caption while loading screen shows — fallback to null on failure
       const { imageUrl: url, caption: cap } = await generateDreamCard(registration.id, data);
@@ -442,6 +444,7 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
             imageUrl={imageUrl}
             caption={caption}
             genFailed={imageGenFailed}
+            registrationId={registrationId}
             onNext={() => go("next")}
           />
         )}
@@ -450,6 +453,7 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
           <NextChild
             childName={data.childName || "Your child"}
             imageUrl={imageUrl}
+            registrationId={registrationId}
             onNext={() => {
               setData((prev) => ({
                 ...EMPTY,
@@ -462,6 +466,7 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
               setCaption(null);
               setSaveError(null);
               setImageGenFailed(false);
+              setRegistrationId(null);
               go("child");
             }}
           />
@@ -663,6 +668,26 @@ function Loading({ childName }: { childName: string }) {
   );
 }
 
+function CopyLinkButton({ registrationId, childName }: { registrationId: string; childName: string }) {
+  const [copied, setCopied] = useState(false);
+  const url = `${window.location.origin}/card/${registrationId}`;
+  const copy = () => {
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  return (
+    <button
+      onClick={copy}
+      className="w-full h-14 rounded-2xl border-2 border-primary/30 text-primary bg-transparent font-semibold text-base flex items-center justify-center gap-2 transition active:scale-[0.98]"
+    >
+      {copied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
+      {copied ? "Link copied!" : `Copy ${childName}'s card link`}
+    </button>
+  );
+}
+
 function Reveal({
   childName,
   dream,
@@ -670,6 +695,7 @@ function Reveal({
   imageUrl,
   caption,
   genFailed,
+  registrationId,
   onNext,
 }: {
   childName: string;
@@ -678,6 +704,7 @@ function Reveal({
   imageUrl: string | null;
   caption: string | null;
   genFailed: boolean;
+  registrationId: string | null;
   onNext: () => void;
 }) {
   const article = /^[aeiou]/i.test(dream) ? "an" : "a";
@@ -738,6 +765,7 @@ function Reveal({
         <PrimaryButton variant="outline" onClick={handleDownload}>
           <Download className="h-5 w-5" /> Download Card
         </PrimaryButton>
+        {registrationId && <CopyLinkButton registrationId={registrationId} childName={childName} />}
       </div>
 
       <p className="text-center text-sm text-muted-foreground mt-4 px-4">
@@ -753,7 +781,7 @@ function Reveal({
   );
 }
 
-function NextChild({ childName, imageUrl, onNext }: { childName: string; imageUrl: string | null; onNext: () => void }) {
+function NextChild({ childName, imageUrl, registrationId, onNext }: { childName: string; imageUrl: string | null; registrationId: string | null; onNext: () => void }) {
   const handleDownload = async () => {
     if (!imageUrl) return;
     try {
@@ -801,6 +829,12 @@ function NextChild({ childName, imageUrl, onNext }: { childName: string; imageUr
           >
             <Download className="h-4 w-4" /> Download {childName}'s card
           </button>
+        </div>
+      )}
+
+      {registrationId && (
+        <div className="mt-3 w-full max-w-[240px]">
+          <CopyLinkButton registrationId={registrationId} childName={childName} />
         </div>
       )}
 
