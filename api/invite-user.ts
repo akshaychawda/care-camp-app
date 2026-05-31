@@ -43,6 +43,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   const { error } = await admin.auth.admin.inviteUserByEmail(email, {
     data: { full_name: full_name ?? "", role: "mad_employee", status: "active" },
+    redirectTo: "https://mad-care-camps.vercel.app/auth/callback",
   });
 
   if (error) return json({ error: error.message }, 400);
