@@ -27,19 +27,21 @@ const ROLE_LABELS: Record<UserRole, string> = {
   cho: "CHO",
 };
 
+// Roles are labels, not status — keep monochrome. super_admin gets a faint accent for hierarchy.
 const ROLE_BADGE: Record<UserRole, string> = {
-  super_admin: "bg-purple-500/15 text-purple-400",
-  mad_employee: "bg-blue-500/15 text-blue-400",
-  co: "bg-violet-500/15 text-violet-400",
-  cho: "bg-pink-500/15 text-pink-400",
+  super_admin: "bg-primary/10 text-primary",
+  mad_employee: "bg-secondary text-muted-foreground",
+  co: "bg-secondary text-muted-foreground",
+  cho: "bg-secondary text-muted-foreground",
 };
 
+// Status carries operational meaning — semantic colour is intentional here.
 const STATUS_BADGE: Record<string, string> = {
-  invited: "bg-blue-500/15 text-blue-400",
-  pending: "bg-amber-500/15 text-amber-500",
-  active: "bg-emerald-500/15 text-emerald-400",
-  disabled: "bg-red-500/15 text-red-400",
-  rejected: "bg-red-500/15 text-red-400",
+  invited: "bg-blue-500/10 text-blue-500",
+  pending: "bg-amber-500/10 text-amber-500",
+  active: "bg-emerald-500/10 text-emerald-500",
+  disabled: "bg-red-500/10 text-red-500",
+  rejected: "bg-red-500/10 text-red-500",
 };
 
 const STATUS_ORDER: Record<string, number> = {
@@ -51,11 +53,11 @@ const STATUS_ORDER: Record<string, number> = {
 };
 
 const AVATAR_COLOR: Record<string, string> = {
-  pending: "bg-amber-500/15 text-amber-600",
-  invited: "bg-blue-500/15 text-blue-500",
-  active: "bg-emerald-500/15 text-emerald-600",
-  disabled: "bg-red-500/15 text-red-500",
-  rejected: "bg-red-500/15 text-red-400",
+  pending: "bg-amber-500/10 text-amber-500",
+  invited: "bg-blue-500/10 text-blue-500",
+  active: "bg-emerald-500/10 text-emerald-500",
+  disabled: "bg-red-500/10 text-red-500",
+  rejected: "bg-red-500/10 text-red-500",
 };
 
 function sortUsers(users: Profile[]): Profile[] {
@@ -105,18 +107,18 @@ function FilterPill({
   variant?: "default" | "pending";
 }) {
   const activeClass = active
-    ? "bg-primary text-primary-foreground border-primary"
-    : variant === "pending"
-      ? "border-amber-400 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20"
-      : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground";
+    ? variant === "pending"
+      ? "bg-amber-500 text-white"
+      : "bg-primary text-primary-foreground"
+    : "bg-secondary/60 text-muted-foreground hover:text-foreground";
   return (
     <button
       onClick={onClick}
-      className={`h-8 px-3 rounded-full border-2 text-xs font-semibold transition flex items-center gap-1.5 ${activeClass}`}
+      className={`h-8 px-3.5 rounded-full text-xs font-semibold transition flex items-center gap-1.5 ${activeClass}`}
     >
       {label}
       {count !== undefined && (
-        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold leading-none ${active ? "bg-white/20" : "bg-secondary text-muted-foreground"}`}>
+        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold leading-none ${active ? "bg-white/25" : "bg-background/60 text-muted-foreground"}`}>
           {count}
         </span>
       )}
@@ -498,7 +500,7 @@ function UsersPage() {
   };
 
   return (
-    <div className="px-5 md:px-10 py-6 md:py-10 w-full">
+    <div className="px-5 md:px-10 py-6 md:py-10 w-full max-w-5xl mx-auto">
       <PageGuide pageKey="users" role={currentRole as UserRole} />
 
       <div className="flex items-center justify-between gap-4 mb-6">
@@ -524,7 +526,7 @@ function UsersPage() {
 
       {/* Status filter */}
       <div className="mb-3">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Status</p>
+        <p className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-2">Status</p>
         <div className="flex gap-2 flex-wrap">
           <FilterPill label="All" count={users.length} active={statusFilter === "all"} onClick={() => setStatusFilter("all")} />
           <FilterPill label="Pending" count={statusCounts["pending"] ?? 0} active={statusFilter === "pending"} onClick={() => setStatusFilter("pending")} variant="pending" />
@@ -536,7 +538,7 @@ function UsersPage() {
 
       {/* Role filter */}
       <div className="mb-4">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Role</p>
+        <p className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-2">Role</p>
         <div className="flex gap-2 flex-wrap">
           <FilterPill label="All roles" active={roleFilter === "all"} onClick={() => setRoleFilter("all")} />
           <FilterPill label="MAD Employee" count={roleCounts["mad_employee"] ?? 0} active={roleFilter === "mad_employee"} onClick={() => setRoleFilter("mad_employee")} />
@@ -550,7 +552,7 @@ function UsersPage() {
         {" · "}{statusLabel}{" · "}{roleLabel}
       </p>
 
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <div className="bg-secondary/30 rounded-xl overflow-hidden">
         {loading ? (
           <div className="py-12 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
         ) : loadError ? (
@@ -566,7 +568,7 @@ function UsersPage() {
             </button>
           </div>
         ) : (
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-border/60">
             {filtered.map((u) => (
               <UserRow
                 key={u.id}

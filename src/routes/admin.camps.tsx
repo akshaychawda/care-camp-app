@@ -1,12 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Plus, Loader2 } from "lucide-react";
+import { ArrowRight, Plus, Loader2, Radio, Users, Sparkles } from "lucide-react";
+import { z } from "zod";
 import { Route as AdminRoute } from "@/routes/admin";
 import { getSessions, getCampOwners, type CampSession } from "@/lib/api";
 import type { Profile } from "@/lib/supabase";
 import { PageGuide } from "@/components/admin/PageGuide";
 
+const campsSearchSchema = z.object({
+  status: z.enum(["all", "open", "closed"]).optional(),
+});
+
 export const Route = createFileRoute("/admin/camps")({
+  validateSearch: campsSearchSchema,
   component: CampsPage,
   head: () => ({
     meta: [{ title: "Camps — MAD Care Camps" }],
@@ -15,15 +21,21 @@ export const Route = createFileRoute("/admin/camps")({
 
 function CampsPage() {
   const { profile } = AdminRoute.useRouteContext();
+  const { status: statusParam } = Route.useSearch();
   const canCreateCamp = profile?.role !== "cho";
 
   const [sessions, setSessions] = useState<CampSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [owners, setOwners] = useState<Profile[]>([]);
-  const [statusFilter, setStatusFilter] = useState<"all" | "open" | "closed">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "open" | "closed">(statusParam ?? "all");
   const [cityFilter, setCityFilter] = useState("all");
   const [ownerFilter, setOwnerFilter] = useState("all");
+
+  // Sync filter when arriving via a link that carries ?status=open
+  useEffect(() => {
+    if (statusParam) setStatusFilter(statusParam);
+  }, [statusParam]);
 
   const load = async () => {
     setLoading(true);
@@ -63,9 +75,10 @@ function CampsPage() {
   const cityLabel = cityFilter === "all" ? "All cities" : cityFilter;
 
   return (
-    <div className="px-5 md:px-10 py-6 md:py-10 w-full">
+    <div className="px-5 md:px-10 py-6 md:py-10 w-full max-w-5xl mx-auto">
       <PageGuide pageKey="camps" role={profile?.role ?? "cho"} />
 
+      {/* Header */}
       <div className="flex items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">Camps</h1>
@@ -82,37 +95,43 @@ function CampsPage() {
         )}
       </div>
 
-      {/* Summary cards */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="bg-card border-2 border-emerald-500/30 rounded-xl p-5">
-          <div className="text-3xl font-black text-emerald-500">{openCount}</div>
-          <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-1">Open now</div>
+      {/* Summary tiles — hybrid borderless */}
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        <div className="bg-emerald-500/[0.08] rounded-xl p-5">
+          <div className="flex items-center gap-1.5 mb-3">
+            <Radio className="h-3.5 w-3.5 text-emerald-500/70 shrink-0" />
+            <span className="text-[11px] font-semibold text-emerald-600/70 uppercase tracking-widest">Open now</span>
+          </div>
+          <div className="text-4xl font-black text-emerald-500 leading-none">{openCount}</div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-5">
-          <div className="text-3xl font-black text-foreground">{closedCount}</div>
-          <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-1">Closed</div>
+        <div className="bg-secondary/50 rounded-xl p-5">
+          <div className="flex items-center gap-1.5 mb-3">
+            <span className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-widest">Closed</span>
+          </div>
+          <div className="text-4xl font-black text-foreground leading-none">{closedCount}</div>
         </div>
       </div>
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2 mb-3">
-        {(["all", "open", "closed"] as const).map((s) => (
-          <button
-            key={s}
-            onClick={() => setStatusFilter(s)}
-            className={`h-8 px-4 rounded-full border-2 text-xs font-semibold transition capitalize ${
-              statusFilter === s
-                ? s === "open"
-                  ? "bg-emerald-500 border-emerald-500 text-white"
-                  : "bg-foreground border-foreground text-background"
-                : s === "open"
-                  ? "border-emerald-400 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-                  : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
-            }`}
-          >
-            {s === "all" ? `All${sessions.length > 0 ? ` ${sessions.length}` : ""}` : s}
-          </button>
-        ))}
+        {(["all", "open", "closed"] as const).map((s) => {
+          const active = statusFilter === s;
+          return (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              className={`h-8 px-3.5 rounded-full text-xs font-semibold transition capitalize ${
+                active
+                  ? s === "open"
+                    ? "bg-emerald-500 text-white"
+                    : "bg-primary text-primary-foreground"
+                  : "bg-secondary/60 text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {s === "all" ? `All${sessions.length > 0 ? ` ${sessions.length}` : ""}` : s}
+            </button>
+          );
+        })}
         <div className="ml-auto flex gap-2">
           <select
             value={cityFilter}
@@ -136,12 +155,12 @@ function CampsPage() {
       </div>
 
       <p className="text-xs text-muted-foreground mb-4">
-        Showing <span className="font-semibold text-foreground">{filtered.length} camps</span>
+        Showing <span className="font-semibold text-foreground">{filtered.length} {filtered.length === 1 ? "camp" : "camps"}</span>
         {" · "}{statusLabel}{" · "}{cityLabel}
       </p>
 
       {/* Camp list */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      <div className="bg-secondary/30 rounded-xl overflow-hidden">
         {loading ? (
           <div className="py-12 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
         ) : loadError ? (
@@ -173,13 +192,13 @@ function CampsPage() {
             )}
           </div>
         ) : (
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-border/60">
             {filtered.map((s) => (
               <Link
                 key={s.id}
                 to="/admin/sessions/$sessionId"
                 params={{ sessionId: s.id }}
-                className="flex items-center gap-4 px-5 py-4 hover:bg-secondary/30 transition group"
+                className="flex items-center gap-4 px-5 py-4 hover:bg-secondary/60 transition group"
               >
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-foreground">
@@ -192,18 +211,19 @@ function CampsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-5 shrink-0">
-                  <div className="text-right hidden sm:block">
-                    <div className="font-bold tabular-nums text-foreground">{s.parent_count}</div>
-                    <div className="text-xs text-muted-foreground">Parents</div>
+                  <div className="text-right hidden sm:flex items-center gap-1.5">
+                    <Users className="h-3.5 w-3.5 text-muted-foreground/50" />
+                    <span className="font-bold tabular-nums text-foreground">{s.parent_count}</span>
                   </div>
-                  <div className="text-right hidden sm:block">
-                    <div className="font-bold tabular-nums text-foreground">{s.card_count}</div>
-                    <div className="text-xs text-muted-foreground">Cards</div>
+                  <div className="text-right hidden sm:flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5 text-muted-foreground/50" />
+                    <span className="font-bold tabular-nums text-foreground">{s.card_count}</span>
                   </div>
-                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
-                    s.is_open ? "bg-emerald-500/15 text-emerald-400" : "bg-secondary text-muted-foreground"
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold ${
+                    s.is_open ? "bg-emerald-500/10 text-emerald-500" : "bg-secondary text-muted-foreground"
                   }`}>
-                    {s.is_open ? "● Open" : "Closed"}
+                    {s.is_open && <Radio className="h-2.5 w-2.5" />}
+                    {s.is_open ? "Open" : "Closed"}
                   </span>
                   <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
                 </div>

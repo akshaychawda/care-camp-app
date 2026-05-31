@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Route as AdminRoute } from "@/routes/admin";
 import { Users, Sparkles, Tent, Clock, UserCheck, Radio, TrendingUp } from "lucide-react";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
 import {
   getSessions,
@@ -109,25 +109,34 @@ function Overview() {
     ? Math.round(filteredSessions.filter(s => !s.is_open).reduce((a, s) => a + s.parent_count, 0) / closedCamps)
     : 0;
 
-  const cardSuccessRate = parentStats && parentStats.totalChildren > 0
-    ? Math.round((parentStats.cardsGenerated / parentStats.totalChildren) * 100)
-    : 0;
+  // When a city/owner filter is active, Reach must reflect it. We can derive
+  // children/cards from session aggregates, but unique-parent dedup (by phone)
+  // is only available programme-wide via getParentStats. So under a filter we
+  // show the filtered registration totals; unfiltered we show the deduped reach.
+  const isFiltered = cityFilter !== "all" || ownerFilter !== "all";
 
-  const campsByCity = useMemo(() => {
-    const map: Record<string, number> = {};
-    filteredSessions.forEach((s) => { map[s.city] = (map[s.city] ?? 0) + 1; });
-    return Object.entries(map)
-      .map(([city, count]) => ({ city, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 6);
-  }, [filteredSessions]);
+  const childrenCount = isFiltered
+    ? filteredSessions.reduce((a, s) => a + s.parent_count, 0)
+    : (parentStats?.totalChildren ?? 0);
+
+  const cardsCount = isFiltered
+    ? filteredSessions.reduce((a, s) => a + s.card_count, 0)
+    : (parentStats?.cardsGenerated ?? 0);
+
+  const parentsCount = isFiltered
+    ? childrenCount
+    : (parentStats?.uniqueParents ?? 0);
+
+  const cardSuccessRate = childrenCount > 0
+    ? Math.round((cardsCount / childrenCount) * 100)
+    : 0;
 
   const updatedLabel = updatedAt
     ? `↻ ${updatedAt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`
     : loadError ? "Failed to load" : "Loading…";
 
   return (
-    <div className="px-5 md:px-10 py-6 md:py-10 w-full max-w-3xl mx-auto">
+    <div className="px-5 md:px-10 py-6 md:py-10 w-full max-w-4xl mx-auto">
       <PageGuide pageKey="overview" role={profile?.role ?? "cho"} />
 
       {/* Header */}
@@ -167,13 +176,23 @@ function Overview() {
             {liveCamps.slice(0, 3).map((c) => `${c.city} · ${c.area}`).join(", ")}
             {liveCamps.length > 3 && ` +${liveCamps.length - 3} more`}
           </p>
-          <Link
-            to="/admin/sessions/$sessionId"
-            params={{ sessionId: liveCamps[0].id }}
-            className="shrink-0 bg-white text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-lg hover:opacity-90 transition"
-          >
-            Go to camp →
-          </Link>
+          {liveCamps.length === 1 ? (
+            <Link
+              to="/admin/sessions/$sessionId"
+              params={{ sessionId: liveCamps[0].id }}
+              className="shrink-0 bg-white text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-lg hover:opacity-90 transition"
+            >
+              Go to camp →
+            </Link>
+          ) : (
+            <Link
+              to="/admin/camps"
+              search={{ status: "open" }}
+              className="shrink-0 bg-white text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-lg hover:opacity-90 transition"
+            >
+              View all →
+            </Link>
+          )}
         </div>
       )}
 
@@ -183,7 +202,7 @@ function Overview() {
         <div className="bg-secondary/50 rounded-xl p-5">
           <TileLabel icon={Users}>Children</TileLabel>
           <p className="text-4xl font-black text-foreground leading-none">
-            {(parentStats?.totalChildren ?? 0).toLocaleString("en-IN")}
+            {childrenCount.toLocaleString("en-IN")}
           </p>
           <p className="text-xs text-muted-foreground mt-2.5">Dreams captured</p>
         </div>
@@ -192,9 +211,11 @@ function Overview() {
         <div className="bg-primary/[0.07] rounded-xl p-5">
           <TileLabel icon={Users}>Parents</TileLabel>
           <p className="text-4xl font-black text-primary leading-none">
-            {(parentStats?.uniqueParents ?? 0).toLocaleString("en-IN")}
+            {parentsCount.toLocaleString("en-IN")}
           </p>
-          <p className="text-xs text-muted-foreground mt-2.5">Unique families reached</p>
+          <p className="text-xs text-muted-foreground mt-2.5">
+            {isFiltered ? "Registrations" : "Unique families reached"}
+          </p>
         </div>
 
         {/* Card rate */}
@@ -203,7 +224,7 @@ function Overview() {
           <p className="text-4xl font-black text-foreground leading-none">{cardSuccessRate}%</p>
           <p className="text-xs text-emerald-500 font-medium mt-2.5 flex items-center gap-1">
             <TrendingUp className="h-3 w-3" />
-            {(parentStats?.cardsGenerated ?? 0)} of {(parentStats?.totalChildren ?? 0)}
+            {cardsCount} of {childrenCount}
           </p>
         </div>
       </div>
@@ -243,8 +264,8 @@ function Overview() {
         </div>
       </div>
 
-      {/* Chart */}
-      <div className="bg-secondary/50 rounded-xl p-5 mb-4">
+      {/* Chart — smooth area line */}
+      <div className="bg-secondary/50 rounded-xl p-5">
         <div className="flex items-center justify-between mb-4">
           <p className="text-sm font-semibold text-foreground">Registrations</p>
           <div className="flex items-center gap-2">
@@ -259,8 +280,14 @@ function Overview() {
         {weeklyData.every((d) => d.count === 0) ? (
           <p className="text-sm text-muted-foreground text-center py-8">No registrations yet.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={120}>
-            <BarChart data={weeklyData} margin={{ top: 0, right: 0, left: -28, bottom: 0 }}>
+          <ResponsiveContainer width="100%" height={130}>
+            <AreaChart data={weeklyData} margin={{ top: 4, right: 4, left: -28, bottom: 0 }}>
+              <defs>
+                <linearGradient id="regGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.18} />
+                  <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
+                </linearGradient>
+              </defs>
               <XAxis
                 dataKey="week"
                 tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
@@ -282,32 +309,17 @@ function Overview() {
                 }}
                 formatter={(v: number) => [v, "Registrations"]}
               />
-              <Bar dataKey="count" fill="var(--primary)" radius={[3, 3, 0, 0]} />
-            </BarChart>
+              <Area
+                type="monotone"
+                dataKey="count"
+                stroke="var(--primary)"
+                strokeWidth={2}
+                fill="url(#regGradient)"
+              />
+            </AreaChart>
           </ResponsiveContainer>
         )}
       </div>
-
-      {/* Camps by city */}
-      {campsByCity.length > 0 && (
-        <div className="bg-secondary/50 rounded-xl p-5">
-          <p className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-4">By city</p>
-          <div className="space-y-3">
-            {campsByCity.map((c) => (
-              <div key={c.city} className="flex items-center gap-3">
-                <span className="text-sm font-medium text-foreground w-24 shrink-0">{c.city}</span>
-                <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary rounded-full"
-                    style={{ width: `${(c.count / (campsByCity[0]?.count ?? 1)) * 100}%` }}
-                  />
-                </div>
-                <span className="text-xs font-bold text-muted-foreground w-5 text-right shrink-0">{c.count}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {loading && (
         <div className="fixed inset-0 bg-background/50 flex items-center justify-center z-50 pointer-events-none">

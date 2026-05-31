@@ -61,18 +61,18 @@ function NewCamp() {
     );
 
   return (
-    <div className="px-5 md:px-10 py-6 md:py-10 max-w-2xl">
+    <div className="px-5 md:px-10 py-6 md:py-10 max-w-2xl mx-auto">
       <Link
-        to="/admin"
+        to="/admin/camps"
         className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground mb-4"
       >
-        <ArrowLeft className="h-4 w-4" /> Back to Dashboard
+        <ArrowLeft className="h-4 w-4" /> Back to Camps
       </Link>
 
       <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Create New Camp</h1>
       <p className="text-sm text-muted-foreground mb-8">Set up a Care Camp for your community.</p>
 
-      <form onSubmit={submit} className="bg-card border border-border rounded-xl p-6 space-y-5">
+      <form onSubmit={submit} className="bg-secondary/30 rounded-xl p-6 space-y-5">
         <FormField label="City">
           <input
             list="city-options"
@@ -149,7 +149,7 @@ function NewCamp() {
               <Loader2 className="h-4 w-4 animate-spin" /> Creating…
             </>
           ) : (
-            "Create Session"
+            "Create Camp"
           )}
         </button>
       </form>
@@ -202,17 +202,17 @@ function Confirmation({
   };
 
   return (
-    <div className="px-5 md:px-10 py-6 md:py-10 max-w-2xl">
+    <div className="px-5 md:px-10 py-6 md:py-10 max-w-2xl mx-auto">
       <Link
-        to="/admin"
+        to="/admin/camps"
         className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground mb-4"
       >
-        <ArrowLeft className="h-4 w-4" /> Back to Dashboard
+        <ArrowLeft className="h-4 w-4" /> Back to Camps
       </Link>
 
-      <div className="bg-card border border-border rounded-xl p-6 md:p-8">
-        <div className="flex items-center gap-2 text-whatsapp font-semibold text-sm mb-4">
-          <Check className="h-5 w-5" /> Session created
+      <div className="bg-secondary/30 rounded-xl p-6 md:p-8">
+        <div className="flex items-center gap-2 text-emerald-500 font-semibold text-sm mb-4">
+          <Check className="h-5 w-5" /> Camp created
         </div>
 
         <h1 className="text-2xl font-bold text-foreground">

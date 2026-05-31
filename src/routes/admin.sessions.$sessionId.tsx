@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle2, XCircle, Copy, Check, UserPlus, X, RefreshCw } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, Copy, Check, UserPlus, X, RefreshCw, Radio } from "lucide-react";
 import { PageGuide } from "@/components/admin/PageGuide";
 import QRCode from "qrcode";
 import {
@@ -24,8 +24,8 @@ export const Route = createFileRoute("/admin/sessions/$sessionId")({
     <div className="p-10 text-center">
       <h1 className="text-xl font-bold mb-2">Couldn't load camp</h1>
       <p className="text-sm text-muted-foreground mb-4">{error.message}</p>
-      <Link to="/admin" className="text-primary font-semibold">
-        ← Back to dashboard
+      <Link to="/admin/camps" className="text-primary font-semibold">
+        ← Back to camps
       </Link>
     </div>
   ),
@@ -42,8 +42,8 @@ function formatDuration(startIso: string, endIso: string | null): string {
 
 function StatBlock({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="bg-card border border-border rounded-lg px-4 py-3">
-      <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+    <div className="bg-secondary/50 rounded-xl px-4 py-3">
+      <div className="text-[11px] uppercase tracking-widest text-muted-foreground/60 font-semibold">
         {label}
       </div>
       <div className="text-lg font-bold text-foreground mt-1 tabular-nums">{value}</div>
@@ -103,8 +103,8 @@ function SharePanel({ campId }: { campId: string }) {
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg p-4 space-y-3">
-      <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+    <div className="bg-secondary/50 rounded-xl p-4 space-y-3">
+      <div className="text-[11px] uppercase tracking-widest text-muted-foreground/60 font-semibold">
         Share Camp
       </div>
 
@@ -204,8 +204,8 @@ function CampQR({ sessionId }: { sessionId: string }) {
         </div>
       )}
 
-      <div className="bg-card border border-border rounded-lg p-4 space-y-3">
-        <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+      <div className="bg-secondary/50 rounded-xl p-4 space-y-3">
+        <div className="text-[11px] uppercase tracking-widest text-muted-foreground/60 font-semibold">
           Camp QR Code
         </div>
         <div className="flex justify-center">
@@ -297,8 +297,8 @@ function SessionDetail() {
       <div className="p-10 text-center">
         <h1 className="text-xl font-bold mb-2">Couldn't load camp</h1>
         <p className="text-sm text-muted-foreground mb-4">{error ?? "Camp not found"}</p>
-        <Link to="/admin" className="text-primary font-semibold">
-          ← Back to dashboard
+        <Link to="/admin/camps" className="text-primary font-semibold">
+          ← Back to camps
         </Link>
       </div>
     );
@@ -310,12 +310,12 @@ function SessionDetail() {
   });
 
   return (
-    <div className="px-5 md:px-8 lg:px-10 py-6 md:py-10 max-w-7xl">
+    <div className="px-5 md:px-8 lg:px-10 py-6 md:py-10 max-w-6xl mx-auto">
       <Link
-        to="/admin"
+        to="/admin/camps"
         className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground mb-4"
       >
-        <ArrowLeft className="h-4 w-4" /> Back to Dashboard
+        <ArrowLeft className="h-4 w-4" /> Back to Camps
       </Link>
       <PageGuide pageKey="session-detail" role={profile?.role ?? "cho"} />
 
@@ -325,10 +325,11 @@ function SessionDetail() {
 
       <div className="flex items-center gap-3 mb-6">
         <span
-          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-            isOpen ? "bg-emerald-900/40 text-emerald-400" : "bg-red-900/40 text-red-400"
+          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+            isOpen ? "bg-emerald-500/10 text-emerald-500" : "bg-secondary text-muted-foreground"
           }`}
         >
+          {isOpen && <Radio className="h-3 w-3" />}
           {isOpen ? "Open" : "Closed"}
         </span>
         {canManageCamp && (
@@ -393,8 +394,8 @@ function SessionDetail() {
         </aside>
 
         {/* Registrations column */}
-        <section className="md:col-span-2 bg-card border border-border rounded-xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+        <section className="md:col-span-2 bg-secondary/30 rounded-xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-border/60 flex items-center justify-between">
             <div>
               <h2 className="font-semibold text-foreground">Registrations</h2>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -417,7 +418,7 @@ function SessionDetail() {
           ) : (
             <>
               {/* Mobile + tablet: card list */}
-              <div className="lg:hidden divide-y divide-border">
+              <div className="lg:hidden divide-y divide-border/60">
                 {registrations.map((r) => (
                   <div key={r.id} className="px-5 py-4">
                     <div className="flex items-start justify-between gap-3">
@@ -440,7 +441,7 @@ function SessionDetail() {
               {/* Desktop: table */}
               <div className="hidden lg:block overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-secondary/60 text-xs uppercase tracking-wider text-muted-foreground">
+                  <thead className="bg-secondary/60 text-[11px] uppercase tracking-widest text-muted-foreground/60">
                     <tr>
                       <th className="text-left font-semibold px-5 py-3">Name</th>
                       <th className="text-left font-semibold px-5 py-3">Child</th>
@@ -449,7 +450,7 @@ function SessionDetail() {
                       <th className="text-left font-semibold px-5 py-3">Card Generated</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
+                  <tbody className="divide-y divide-border/60">
                     {registrations.map((r) => (
                       <tr key={r.id} className="hover:bg-secondary/30">
                         <td className="px-5 py-3 font-medium text-foreground">{r.name}</td>
