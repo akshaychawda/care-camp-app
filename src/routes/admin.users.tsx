@@ -77,6 +77,16 @@ function PendingRow({
     <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
       <div className="flex-1 min-w-0">
         <div className="font-semibold text-foreground">{user.full_name || "—"}</div>
+        {user.email && (
+          <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+            {user.email}
+            {!user.email.endsWith("@makeadiff.in") && (
+              <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-500">
+                non-MAD email
+              </span>
+            )}
+          </div>
+        )}
         <div className="text-sm text-muted-foreground mt-0.5">
           Requested: <RoleBadge role={user.role} />
         </div>
