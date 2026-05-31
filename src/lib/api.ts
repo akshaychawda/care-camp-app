@@ -166,25 +166,19 @@ export type ParentStats = {
   totalChildren: number;
   uniqueParents: number;
   cardsGenerated: number;
-  genderCounts: { gender: string; count: number }[];
 };
 
 export async function getParentStats(): Promise<ParentStats> {
   const { data, error } = await supabase
     .from("parent_registrations")
-    .select("phone, card_generated, gender");
+    .select("phone, card_generated");
   if (error) throw error;
   const rows = data ?? [];
-  const totalChildren = rows.length;
-  const uniqueParents = new Set(rows.map((r) => r.phone)).size;
-  const cardsGenerated = rows.filter((r) => r.card_generated).length;
-  const genderMap: Record<string, number> = {};
-  rows.forEach((r) => {
-    const g = r.gender ?? "child";
-    genderMap[g] = (genderMap[g] ?? 0) + 1;
-  });
-  const genderCounts = Object.entries(genderMap).map(([gender, count]) => ({ gender, count }));
-  return { totalChildren, uniqueParents, cardsGenerated, genderCounts };
+  return {
+    totalChildren: rows.length,
+    uniqueParents: new Set(rows.map((r) => r.phone)).size,
+    cardsGenerated: rows.filter((r) => r.card_generated).length,
+  };
 }
 
 export async function getRegistrationsByWeek(weeks = 12): Promise<{ week: string; count: number }[]> {
