@@ -219,6 +219,43 @@ export async function updateUserRole(id: string, role: UserRole): Promise<void> 
   if (error) throw error;
 }
 
+async function getAuthToken(): Promise<string | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token ?? null;
+}
+
+export async function cancelInvite(userId: string): Promise<void> {
+  const token = await getAuthToken();
+  const res = await fetch("/api/cancel-invite", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ userId }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error ?? "Failed to cancel invite");
+  }
+}
+
+export async function resendInvite(email: string, fullName: string): Promise<void> {
+  const token = await getAuthToken();
+  const res = await fetch("/api/invite-user", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ email, full_name: fullName }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error ?? "Failed to resend invite");
+  }
+}
+
 // ─── Camp Collaborators ────────────────────────────────────────────────────────
 
 export type Collaborator = {

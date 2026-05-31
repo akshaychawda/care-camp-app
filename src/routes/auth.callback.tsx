@@ -20,6 +20,10 @@ function AuthCallback() {
           navigate({ to: "/auth/pending", replace: true });
         } else if (profile.status === "active") {
           navigate({ to: "/admin", replace: true });
+        } else if (profile.status === "invited") {
+          // Hand-picked invite — activate on first sign-in, no approval needed
+          await supabase.from("profiles").update({ status: "active" }).eq("id", session.user.id);
+          navigate({ to: "/admin", replace: true });
         } else {
           await supabase.auth.signOut();
           navigate({ to: "/login", search: { error: profile.status }, replace: true });

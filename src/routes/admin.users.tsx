@@ -10,6 +10,8 @@ import {
   disableUser,
   enableUser,
   updateUserRole,
+  cancelInvite,
+  resendInvite,
 } from "@/lib/api";
 import type { Profile, UserRole } from "@/lib/supabase";
 import { supabase } from "@/lib/supabase";
@@ -33,6 +35,7 @@ const ROLE_BADGE: Record<UserRole, string> = {
 };
 
 const STATUS_BADGE: Record<string, string> = {
+  invited: "bg-blue-500/15 text-blue-400",
   active: "bg-emerald-500/15 text-emerald-400",
   disabled: "bg-red-500/15 text-red-400",
   rejected: "bg-red-500/15 text-red-400",
@@ -117,18 +120,80 @@ function PendingRow({
   );
 }
 
+function InvitedRow({
+  user,
+  onCancel,
+  onResend,
+}: {
+  user: Profile;
+  onCancel: (id: string) => void;
+  onResend: (email: string, fullName: string) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+
+  const cancel = async () => {
+    setBusy(true);
+    await onCancel(user.id);
+    setBusy(false);
+  };
+
+  const resend = async () => {
+    setBusy(true);
+    await onResend(user.email ?? "", user.full_name);
+    setBusy(false);
+  };
+
+  return (
+    <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
+      <div className="flex-1 min-w-0">
+        <div className="font-semibold text-foreground">{user.full_name || user.email || "—"}</div>
+        {user.email && user.full_name && (
+          <div className="text-xs text-muted-foreground mt-0.5">{user.email}</div>
+        )}
+        <div className="flex items-center gap-2 mt-1">
+          <span className="inline-block px-2 py-0.5 rounded-md text-xs font-semibold bg-blue-500/15 text-blue-400">
+            Invited
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {new Date(user.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+          </span>
+        </div>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          onClick={resend}
+          disabled={busy}
+          className="h-9 px-3 rounded-lg border-2 border-primary text-primary text-xs font-semibold flex items-center gap-1.5 hover:bg-primary/10 transition disabled:opacity-40"
+        >
+          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+          Resend
+        </button>
+        <button
+          onClick={cancel}
+          disabled={busy}
+          className="h-9 px-3 rounded-lg border-2 border-destructive text-destructive text-xs font-semibold flex items-center gap-1.5 hover:bg-destructive/10 transition disabled:opacity-40"
+        >
+          <X className="h-3.5 w-3.5" /> Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function UserRow({
   user,
   currentRole,
   onDisable,
   onEnable,
   onRoleChange,
+  onReinvite,
 }: {
   user: Profile;
   currentRole: UserRole;
   onDisable: (id: string) => void;
   onEnable: (id: string) => void;
   onRoleChange: (id: string, role: UserRole) => void;
+  onReinvite: (email: string, fullName: string) => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [pendingRole, setPendingRole] = useState<UserRole>(user.role);
@@ -161,6 +226,9 @@ function UserRow({
     <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
       <div className="flex-1 min-w-0">
         <div className="font-semibold text-foreground">{user.full_name || "—"}</div>
+        {user.email && (
+          <div className="text-xs text-muted-foreground mt-0.5">{user.email}</div>
+        )}
         <div className="flex items-center gap-2 mt-1">
           <RoleBadge role={user.role} />
           <span className={`inline-block px-2 py-0.5 rounded-md text-xs font-semibold ${STATUS_BADGE[user.status] ?? ""}`}>
@@ -168,7 +236,16 @@ function UserRow({
           </span>
         </div>
       </div>
-      {canManage && (
+      {user.status === "rejected" ? (
+        <button
+          onClick={() => onReinvite(user.email ?? "", user.full_name)}
+          disabled={busy}
+          className="h-9 px-3 rounded-lg border-2 border-primary text-primary text-xs font-semibold flex items-center gap-1.5 hover:bg-primary/10 transition disabled:opacity-40 shrink-0"
+        >
+          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
+          Reinvite
+        </button>
+      ) : canManage && (
         <div className="flex items-center gap-2 shrink-0">
           <select
             value={pendingRole}
@@ -400,6 +477,35 @@ function UsersPage() {
     await load();
   };
 
+  const handleCancel = async (id: string) => {
+    try {
+      await cancelInvite(id);
+      toast.success("Invite cancelled");
+    } catch {
+      toast.error("Something went wrong");
+    }
+    await load();
+  };
+
+  const handleResend = async (email: string, fullName: string) => {
+    try {
+      await resendInvite(email, fullName);
+      toast.success("Invite resent");
+    } catch {
+      toast.error("Something went wrong");
+    }
+  };
+
+  const handleReinvite = async (email: string, fullName: string) => {
+    try {
+      await resendInvite(email, fullName);
+      toast.success("Invite sent");
+    } catch {
+      toast.error("Something went wrong");
+    }
+    await load();
+  };
+
   const currentRole = profile?.role ?? "cho";
   const canInvite = currentRole === "super_admin";
 
@@ -482,16 +588,26 @@ function UsersPage() {
           <div className="py-12 text-center text-sm text-muted-foreground">No users yet.</div>
         ) : (
           <div className="divide-y divide-border">
-            {users.map((u) => (
-              <UserRow
-                key={u.id}
-                user={u}
-                currentRole={currentRole as UserRole}
-                onDisable={handleDisable}
-                onEnable={handleEnable}
-                onRoleChange={handleRoleChange}
-              />
-            ))}
+            {users.map((u) =>
+              u.status === "invited" ? (
+                <InvitedRow
+                  key={u.id}
+                  user={u}
+                  onCancel={handleCancel}
+                  onResend={handleResend}
+                />
+              ) : (
+                <UserRow
+                  key={u.id}
+                  user={u}
+                  currentRole={currentRole as UserRole}
+                  onDisable={handleDisable}
+                  onEnable={handleEnable}
+                  onRoleChange={handleRoleChange}
+                  onReinvite={handleReinvite}
+                />
+              )
+            )}
           </div>
         )}
       </div>
