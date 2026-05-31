@@ -145,7 +145,7 @@ function Overview() {
     : "↻ Loading…";
 
   return (
-    <div className="px-5 md:px-10 py-6 md:py-10 w-full max-w-6xl">
+    <div className="px-5 md:px-10 py-6 md:py-10 w-full max-w-3xl">
       <PageGuide pageKey="overview" role={profile?.role ?? "cho"} />
 
       {/* Header */}
@@ -246,26 +246,26 @@ function Overview() {
       </div>
 
       {/* LAYER 3: Efficiency */}
-      {closedCamps > 0 && (
-        <>
-          <SectionLabel>Efficiency (closed camps)</SectionLabel>
-          <div className="grid grid-cols-3 gap-3 mb-5">
-            <div className="bg-card border border-border/50 rounded-xl p-4">
-              <p className="text-xl font-black text-foreground">{avgDuration ?? "—"}</p>
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-1">Avg Duration</p>
-              <p className="text-xs text-muted-foreground mt-1">Across {closedCamps} closed camps</p>
-            </div>
-            <div className="bg-card border border-border/50 rounded-xl p-4">
-              <p className="text-xl font-black text-foreground">{avgParentsPerCamp}</p>
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-1">Avg Parents / Camp</p>
-            </div>
-            <div className="bg-card border border-border/50 rounded-xl p-4">
-              <p className="text-xl font-black text-foreground">{avgCardsPerCamp}</p>
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-1">Avg Cards / Camp</p>
-            </div>
-          </div>
-        </>
-      )}
+      <SectionLabel>Efficiency</SectionLabel>
+      <div className="grid grid-cols-3 gap-3 mb-3">
+        <div className="bg-card border border-border/50 rounded-xl p-4">
+          <p className="text-xl font-black text-foreground">{avgDuration ?? "—"}</p>
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-1">Avg Duration</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {closedCamps > 0 ? `Across ${closedCamps} closed camp${closedCamps > 1 ? "s" : ""}` : "No closed camps yet"}
+          </p>
+        </div>
+        <div className="bg-card border border-border/50 rounded-xl p-4">
+          <p className="text-xl font-black text-foreground">{closedCamps > 0 ? avgParentsPerCamp : "—"}</p>
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-1">Avg Parents / Camp</p>
+          <p className="text-xs text-muted-foreground mt-1">Per closed camp</p>
+        </div>
+        <div className="bg-card border border-border/50 rounded-xl p-4">
+          <p className="text-xl font-black text-foreground">{closedCamps > 0 ? avgCardsPerCamp : "—"}</p>
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-1">Avg Cards / Camp</p>
+          <p className="text-xs text-muted-foreground mt-1">Per closed camp</p>
+        </div>
+      </div>
 
       {/* LAYER 4: Trends & Breakdown */}
       <SectionLabel>Trends & Breakdown</SectionLabel>
