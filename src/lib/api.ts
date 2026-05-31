@@ -117,7 +117,7 @@ export async function registerParentAndChild(params: {
       name: params.parentName,
       phone: params.phone,
       city: params.city,
-      area: params.area,
+      area: params.area.trim().replace(/\b\w/g, (c) => c.toUpperCase()),
       child_name: params.childName,
     })
     .select()
@@ -160,24 +160,79 @@ export async function getCampStatus(id: string): Promise<{ is_open: boolean; cit
   return { is_open: data.is_open, city: data.city ?? "" };
 }
 
-// ─── User Management ──────────────────────────────────────────────────────────
+// ─── Overview Stats ───────────────────────────────────────────────────────────
 
-export async function getPendingUsers(): Promise<Profile[]> {
+export type ParentStats = {
+  totalChildren: number;
+  uniqueParents: number;
+  cardsGenerated: number;
+  genderCounts: { gender: string; count: number }[];
+};
+
+export async function getParentStats(): Promise<ParentStats> {
   const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("status", "pending")
-    .order("created_at", { ascending: true });
+    .from("parent_registrations")
+    .select("phone, card_generated, gender");
   if (error) throw error;
+  const rows = data ?? [];
+  const totalChildren = rows.length;
+  const uniqueParents = new Set(rows.map((r) => r.phone)).size;
+  const cardsGenerated = rows.filter((r) => r.card_generated).length;
+  const genderMap: Record<string, number> = {};
+  rows.forEach((r) => {
+    const g = r.gender ?? "child";
+    genderMap[g] = (genderMap[g] ?? 0) + 1;
+  });
+  const genderCounts = Object.entries(genderMap).map(([gender, count]) => ({ gender, count }));
+  return { totalChildren, uniqueParents, cardsGenerated, genderCounts };
+}
+
+export async function getRegistrationsByWeek(weeks = 12): Promise<{ week: string; count: number }[]> {
+  const since = new Date();
+  since.setDate(since.getDate() - weeks * 7);
+  const { data, error } = await supabase
+    .from("parent_registrations")
+    .select("created_at")
+    .gte("created_at", since.toISOString());
+  if (error) throw error;
+  const rows = data ?? [];
+
+  const buckets: Record<string, number> = {};
+  for (let i = weeks - 1; i >= 0; i--) {
+    const key = `W${weeks - i}`;
+    buckets[key] = 0;
+  }
+
+  rows.forEach((r) => {
+    const created = new Date(r.created_at);
+    const msDiff = Date.now() - created.getTime();
+    const weeksAgo = Math.floor(msDiff / (7 * 24 * 60 * 60 * 1000));
+    if (weeksAgo < weeks) {
+      const key = `W${weeks - weeksAgo}`;
+      if (buckets[key] !== undefined) buckets[key]++;
+    }
+  });
+
+  return Object.entries(buckets).map(([week, count]) => ({ week, count }));
+}
+
+export async function getLiveCamps(): Promise<{ id: string; city: string; area: string }[]> {
+  const { data, error } = await supabase
+    .from("camp_sessions")
+    .select("id, city, area")
+    .eq("is_open", true)
+    .order("created_at", { ascending: false });
+  if (error) return [];
   return data ?? [];
 }
+
+// ─── User Management ──────────────────────────────────────────────────────────
 
 export async function getAllUsers(): Promise<Profile[]> {
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
-    .neq("status", "pending")
-    .order("created_at", { ascending: false });
+    .order("full_name", { ascending: true });
   if (error) throw error;
   return data ?? [];
 }

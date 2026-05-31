@@ -1,10 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { PageGuide } from "@/components/admin/PageGuide";
 import { Check, X, UserCheck, UserX, RefreshCw, UserPlus, Loader2 } from "lucide-react";
 import {
-  getPendingUsers,
   getAllUsers,
   approveUser,
   rejectUser,
@@ -14,7 +13,7 @@ import {
   cancelInvite,
   resendInvite,
 } from "@/lib/api";
-import type { Profile, UserRole } from "@/lib/supabase";
+import type { Profile, UserRole, UserStatus } from "@/lib/supabase";
 import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/admin/users")({
@@ -24,23 +23,48 @@ export const Route = createFileRoute("/admin/users")({
 const ROLE_LABELS: Record<UserRole, string> = {
   super_admin: "Super Admin",
   mad_employee: "MAD Employee",
-  co: "Chapter Organizer",
-  cho: "Community Health Organizer",
+  co: "CO",
+  cho: "CHO",
 };
 
 const ROLE_BADGE: Record<UserRole, string> = {
   super_admin: "bg-purple-500/15 text-purple-400",
   mad_employee: "bg-blue-500/15 text-blue-400",
-  co: "bg-emerald-500/15 text-emerald-400",
-  cho: "bg-amber-500/15 text-amber-400",
+  co: "bg-violet-500/15 text-violet-400",
+  cho: "bg-pink-500/15 text-pink-400",
 };
 
 const STATUS_BADGE: Record<string, string> = {
   invited: "bg-blue-500/15 text-blue-400",
+  pending: "bg-amber-500/15 text-amber-500",
   active: "bg-emerald-500/15 text-emerald-400",
   disabled: "bg-red-500/15 text-red-400",
   rejected: "bg-red-500/15 text-red-400",
 };
+
+const STATUS_ORDER: Record<string, number> = {
+  pending: 0,
+  invited: 1,
+  active: 2,
+  disabled: 3,
+  rejected: 4,
+};
+
+const AVATAR_COLOR: Record<string, string> = {
+  pending: "bg-amber-500/15 text-amber-600",
+  invited: "bg-blue-500/15 text-blue-500",
+  active: "bg-emerald-500/15 text-emerald-600",
+  disabled: "bg-red-500/15 text-red-500",
+  rejected: "bg-red-500/15 text-red-400",
+};
+
+function sortUsers(users: Profile[]): Profile[] {
+  return [...users].sort((a, b) => {
+    const orderDiff = (STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99);
+    if (orderDiff !== 0) return orderDiff;
+    return (a.full_name || "").localeCompare(b.full_name || "");
+  });
+}
 
 function RoleBadge({ role }: { role: UserRole }) {
   return (
@@ -50,273 +74,249 @@ function RoleBadge({ role }: { role: UserRole }) {
   );
 }
 
-function PendingRow({
-  user,
-  onApprove,
-  onReject,
-}: {
-  user: Profile;
-  onApprove: (id: string, role: UserRole) => void;
-  onReject: (id: string) => void;
-}) {
-  const [role, setRole] = useState<UserRole | "">(""); // blank forces conscious selection
-  const [busy, setBusy] = useState(false);
-
-  const approve = async () => {
-    if (!role) return;
-    setBusy(true);
-    await onApprove(user.id, role as UserRole);
-    setBusy(false);
-  };
-
-  const reject = async () => {
-    setBusy(true);
-    await onReject(user.id);
-    setBusy(false);
-  };
-
+function StatusBadge({ status }: { status: UserStatus }) {
   return (
-    <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-start gap-3">
-      <div className="flex-1 min-w-0">
-        <div className="font-semibold text-foreground">{user.full_name || "—"}</div>
-        {user.email && (
-          <div className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
-            {user.email}
-            {!user.email.endsWith("@makeadiff.in") && (
-              <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-500">
-                non-MAD email
-              </span>
-            )}
-          </div>
-        )}
-        <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
-          Requested:&nbsp;<RoleBadge role={user.role} />
-          <span className="text-muted-foreground/50">·</span>
-          {new Date(user.created_at).toLocaleDateString("en-IN", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-          })}
-        </div>
-      </div>
-      <div className="flex flex-col sm:items-end gap-2 shrink-0">
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs font-semibold text-muted-foreground">Assign role:</span>
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value as UserRole)}
-            disabled={busy}
-            className={`h-9 px-2 rounded-lg border bg-input text-xs font-medium transition ${
-              !role ? "border-amber-400 text-muted-foreground" : "border-border text-foreground"
-            }`}
-          >
-            <option value="" disabled>Select role…</option>
-            <option value="cho">CHO</option>
-            <option value="co">CO</option>
-            <option value="mad_employee">MAD Employee</option>
-            <option value="super_admin">Super Admin</option>
-          </select>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={approve}
-            disabled={busy || !role}
-            className="h-9 px-3 rounded-lg bg-emerald-600 text-white text-xs font-semibold flex items-center gap-1.5 hover:opacity-90 transition disabled:opacity-40"
-          >
-            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-            Approve
-          </button>
-          <button
-            onClick={reject}
-            disabled={busy}
-            className="h-9 px-3 rounded-lg border-2 border-destructive text-destructive text-xs font-semibold flex items-center gap-1.5 hover:bg-destructive/10 transition disabled:opacity-40"
-          >
-            <X className="h-3.5 w-3.5" /> Reject
-          </button>
-        </div>
-      </div>
+    <span className={`inline-block px-2 py-0.5 rounded-md text-xs font-semibold capitalize ${STATUS_BADGE[status] ?? ""}`}>
+      {status}
+    </span>
+  );
+}
+
+function Avatar({ name, status }: { name: string; status: UserStatus }) {
+  const initial = (name || "?")[0].toUpperCase();
+  return (
+    <div className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${AVATAR_COLOR[status] ?? "bg-secondary text-foreground"}`}>
+      {initial}
     </div>
   );
 }
 
-function InvitedRow({
-  user,
-  onCancel,
-  onResend,
+function FilterPill({
+  label,
+  count,
+  active,
+  onClick,
+  variant = "default",
 }: {
-  user: Profile;
-  onCancel: (id: string) => void;
-  onResend: (email: string, fullName: string) => void;
+  label: string;
+  count?: number;
+  active: boolean;
+  onClick: () => void;
+  variant?: "default" | "pending";
 }) {
-  const [busy, setBusy] = useState(false);
-
-  const cancel = async () => {
-    setBusy(true);
-    await onCancel(user.id);
-    setBusy(false);
-  };
-
-  const resend = async () => {
-    setBusy(true);
-    await onResend(user.email ?? "", user.full_name);
-    setBusy(false);
-  };
-
+  const activeClass = active
+    ? "bg-primary text-primary-foreground border-primary"
+    : variant === "pending"
+      ? "border-amber-400 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+      : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground";
   return (
-    <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
-      <div className="flex-1 min-w-0">
-        <div className="font-semibold text-foreground">{user.full_name || user.email || "—"}</div>
-        {user.email && user.full_name && (
-          <div className="text-xs text-muted-foreground mt-0.5">{user.email}</div>
-        )}
-        <div className="flex items-center gap-2 mt-1">
-          <span className="inline-block px-2 py-0.5 rounded-md text-xs font-semibold bg-blue-500/15 text-blue-400">
-            Invited
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {new Date(user.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-          </span>
-        </div>
-      </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <button
-          onClick={resend}
-          disabled={busy}
-          className="h-9 px-3 rounded-lg border-2 border-primary text-primary text-xs font-semibold flex items-center gap-1.5 hover:bg-primary/10 transition disabled:opacity-40"
-        >
-          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-          Resend
-        </button>
-        <button
-          onClick={cancel}
-          disabled={busy}
-          className="h-9 px-3 rounded-lg border-2 border-destructive text-destructive text-xs font-semibold flex items-center gap-1.5 hover:bg-destructive/10 transition disabled:opacity-40"
-        >
-          <X className="h-3.5 w-3.5" /> Cancel
-        </button>
-      </div>
-    </div>
+    <button
+      onClick={onClick}
+      className={`h-8 px-3 rounded-full border-2 text-xs font-semibold transition flex items-center gap-1.5 ${activeClass}`}
+    >
+      {label}
+      {count !== undefined && (
+        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold leading-none ${active ? "bg-white/20" : "bg-secondary text-muted-foreground"}`}>
+          {count}
+        </span>
+      )}
+    </button>
   );
 }
 
 function UserRow({
   user,
   currentRole,
+  onApprove,
+  onReject,
   onDisable,
   onEnable,
   onRoleChange,
+  onCancel,
+  onResend,
   onReinvite,
 }: {
   user: Profile;
   currentRole: UserRole;
+  onApprove: (id: string, role: UserRole) => void;
+  onReject: (id: string) => void;
   onDisable: (id: string) => void;
   onEnable: (id: string) => void;
   onRoleChange: (id: string, role: UserRole) => void;
+  onCancel: (id: string) => void;
+  onResend: (email: string, fullName: string) => void;
   onReinvite: (email: string, fullName: string) => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const [assignRole, setAssignRole] = useState<UserRole | "">("");
   const [pendingRole, setPendingRole] = useState<UserRole>(user.role);
+  const [showRoleEdit, setShowRoleEdit] = useState(false);
+
+  const wrap = (fn: () => Promise<void>) => async () => {
+    setBusy(true);
+    try { await fn(); } finally { setBusy(false); }
+  };
+
+  const isNonMad = user.email && !user.email.endsWith("@makeadiff.in");
   const canManage = currentRole === "super_admin" ||
     (currentRole === "mad_employee" && user.role !== "super_admin" && user.role !== "mad_employee");
 
-  const toggle = async () => {
-    setBusy(true);
-    if (user.status === "active") await onDisable(user.id);
-    else await onEnable(user.id);
-    setBusy(false);
-  };
-
-  const saveRole = async () => {
-    if (pendingRole === user.role) return;
-    setBusy(true);
-    try {
-      await onRoleChange(user.id, pendingRole);
-      toast.success("Role updated");
-    } catch {
-      toast.error("Something went wrong");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const roleDirty = pendingRole !== user.role;
-
   return (
-    <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
-      <div className="flex-1 min-w-0">
-        <div className="font-semibold text-foreground">{user.full_name || "—"}</div>
-        {user.email && (
-          <div className="text-xs text-muted-foreground mt-0.5">{user.email}</div>
-        )}
-        <div className="flex items-center gap-2 mt-1">
-          <RoleBadge role={user.role} />
-          <span className={`inline-block px-2 py-0.5 rounded-md text-xs font-semibold ${STATUS_BADGE[user.status] ?? ""}`}>
-            {user.status}
-          </span>
+    <div className="px-5 py-4 flex flex-col sm:flex-row sm:items-start gap-3">
+      <div className="flex items-start gap-3 flex-1 min-w-0">
+        <Avatar name={user.full_name || user.email || "?"} status={user.status} />
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold text-foreground text-sm">{user.full_name || "—"}</div>
+          {user.email && (
+            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+              <span className="text-xs text-muted-foreground">{user.email}</span>
+              {isNonMad && (
+                <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-500">
+                  non-MAD email
+                </span>
+              )}
+            </div>
+          )}
+          <div className="flex items-center gap-1.5 flex-wrap mt-1">
+            <RoleBadge role={user.role} />
+            <StatusBadge status={user.status} />
+          </div>
         </div>
       </div>
-      {user.status === "rejected" ? (
-        <button
-          onClick={() => onReinvite(user.email ?? "", user.full_name)}
-          disabled={busy}
-          className="h-9 px-3 rounded-lg border-2 border-primary text-primary text-xs font-semibold flex items-center gap-1.5 hover:bg-primary/10 transition disabled:opacity-40 shrink-0"
-        >
-          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
-          Reinvite
-        </button>
-      ) : canManage && (
-        <div className="flex items-center gap-2 shrink-0">
-          <select
-            value={pendingRole}
-            onChange={(e) => setPendingRole(e.target.value as UserRole)}
-            disabled={busy}
-            className="h-9 px-2 rounded-lg border border-border bg-input text-xs font-medium text-foreground"
-          >
-            <option value="cho">CHO</option>
-            <option value="co">CO</option>
-            <option value="mad_employee">MAD Employee</option>
-            {currentRole === "super_admin" && <option value="super_admin">Super Admin</option>}
-          </select>
-          {roleDirty && (
-            <button
-              onClick={saveRole}
+
+      <div className="flex items-center gap-2 shrink-0 flex-wrap">
+        {/* PENDING */}
+        {user.status === "pending" && canManage && (
+          <>
+            <select
+              value={assignRole}
+              onChange={(e) => setAssignRole(e.target.value as UserRole)}
               disabled={busy}
-              className="h-9 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center gap-1.5 hover:opacity-90 transition disabled:opacity-40"
+              className={`h-9 px-2 rounded-lg border bg-input text-xs font-medium transition ${!assignRole ? "border-amber-400 text-muted-foreground" : "border-border text-foreground"}`}
+            >
+              <option value="" disabled>Assign role…</option>
+              <option value="cho">CHO</option>
+              <option value="co">CO</option>
+              <option value="mad_employee">MAD Employee</option>
+              {currentRole === "super_admin" && <option value="super_admin">Super Admin</option>}
+            </select>
+            <button
+              onClick={wrap(() => onApprove(user.id, assignRole as UserRole))}
+              disabled={busy || !assignRole}
+              className="h-9 px-3 rounded-lg bg-emerald-600 text-white text-xs font-semibold flex items-center gap-1.5 hover:opacity-90 transition disabled:opacity-40"
             >
               {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-              Save
+              Approve
             </button>
-          )}
-          <button
-            onClick={toggle}
-            disabled={busy}
-            className={`h-9 px-3 rounded-lg border-2 text-xs font-semibold flex items-center gap-1.5 transition disabled:opacity-40 ${
-              user.status === "active"
-                ? "border-destructive text-destructive hover:bg-destructive/10"
-                : "border-emerald-500 text-emerald-500 hover:bg-emerald-500/10"
-            }`}
-          >
-            {busy ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : user.status === "active" ? (
-              <><UserX className="h-3.5 w-3.5" /> Disable</>
+            <button
+              onClick={wrap(() => onReject(user.id))}
+              disabled={busy}
+              className="h-9 px-3 rounded-lg border-2 border-destructive text-destructive text-xs font-semibold flex items-center gap-1.5 hover:bg-destructive/10 transition disabled:opacity-40"
+            >
+              <X className="h-3.5 w-3.5" /> Reject
+            </button>
+          </>
+        )}
+
+        {/* INVITED */}
+        {user.status === "invited" && canManage && (
+          <>
+            <button
+              onClick={wrap(async () => { onResend(user.email ?? "", user.full_name); })}
+              disabled={busy}
+              className="h-9 px-3 rounded-lg border-2 border-primary text-primary text-xs font-semibold flex items-center gap-1.5 hover:bg-primary/10 transition disabled:opacity-40"
+            >
+              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+              Resend
+            </button>
+            <button
+              onClick={wrap(async () => { onCancel(user.id); })}
+              disabled={busy}
+              className="h-9 px-3 rounded-lg border-2 border-destructive text-destructive text-xs font-semibold flex items-center gap-1.5 hover:bg-destructive/10 transition disabled:opacity-40"
+            >
+              <X className="h-3.5 w-3.5" /> Cancel
+            </button>
+          </>
+        )}
+
+        {/* ACTIVE */}
+        {user.status === "active" && canManage && (
+          <>
+            {showRoleEdit ? (
+              <>
+                <select
+                  value={pendingRole}
+                  onChange={(e) => setPendingRole(e.target.value as UserRole)}
+                  disabled={busy}
+                  className="h-9 px-2 rounded-lg border border-border bg-input text-xs font-medium text-foreground"
+                >
+                  <option value="cho">CHO</option>
+                  <option value="co">CO</option>
+                  <option value="mad_employee">MAD Employee</option>
+                  {currentRole === "super_admin" && <option value="super_admin">Super Admin</option>}
+                </select>
+                <button
+                  onClick={wrap(async () => { await onRoleChange(user.id, pendingRole); setShowRoleEdit(false); })}
+                  disabled={busy || pendingRole === user.role}
+                  className="h-9 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center gap-1.5 hover:opacity-90 transition disabled:opacity-40"
+                >
+                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                  Save
+                </button>
+                <button onClick={() => setShowRoleEdit(false)} className="h-9 px-2 rounded-lg border border-border text-xs text-muted-foreground hover:text-foreground transition">
+                  Cancel
+                </button>
+              </>
             ) : (
-              <><UserCheck className="h-3.5 w-3.5" /> Enable</>
+              <>
+                <button
+                  onClick={() => setShowRoleEdit(true)}
+                  className="h-9 px-3 rounded-lg border-2 border-border text-xs font-semibold text-muted-foreground flex items-center gap-1.5 hover:border-primary/40 hover:text-foreground transition"
+                >
+                  Change role
+                </button>
+                <button
+                  onClick={wrap(() => onDisable(user.id))}
+                  disabled={busy}
+                  className="h-9 px-3 rounded-lg border-2 border-destructive text-destructive text-xs font-semibold flex items-center gap-1.5 hover:bg-destructive/10 transition disabled:opacity-40"
+                >
+                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserX className="h-3.5 w-3.5" />}
+                  Disable
+                </button>
+              </>
             )}
+          </>
+        )}
+
+        {/* DISABLED */}
+        {user.status === "disabled" && canManage && (
+          <button
+            onClick={wrap(() => onEnable(user.id))}
+            disabled={busy}
+            className="h-9 px-3 rounded-lg border-2 border-emerald-500 text-emerald-500 text-xs font-semibold flex items-center gap-1.5 hover:bg-emerald-500/10 transition disabled:opacity-40"
+          >
+            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserCheck className="h-3.5 w-3.5" />}
+            Enable
           </button>
-        </div>
-      )}
+        )}
+
+        {/* REJECTED */}
+        {user.status === "rejected" && canManage && (
+          <button
+            onClick={wrap(async () => { onReinvite(user.email ?? "", user.full_name); })}
+            disabled={busy}
+            className="h-9 px-3 rounded-lg border-2 border-primary text-primary text-xs font-semibold flex items-center gap-1.5 hover:bg-primary/10 transition disabled:opacity-40"
+          >
+            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
+            Reinvite
+          </button>
+        )}
+      </div>
     </div>
   );
 }
 
-function InviteModal({
-  onClose,
-  onInvited,
-}: {
-  onClose: () => void;
-  onInvited: () => void;
-}) {
+function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: () => void }) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -351,6 +351,8 @@ function InviteModal({
     }
   };
 
+  const inputCls = "w-full h-11 px-3 rounded-lg border border-border bg-input text-sm focus:outline-none focus:ring-2 focus:ring-ring";
+
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
       <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-sm space-y-4">
@@ -359,55 +361,26 @@ function InviteModal({
           <div className="text-center space-y-3 py-4">
             <Check className="h-10 w-10 text-emerald-500 mx-auto" />
             <p className="text-sm text-muted-foreground">
-              Invite sent to <span className="font-semibold text-foreground">{email}</span>. They'll
-              get an email with a login link.
+              Invite sent to <span className="font-semibold text-foreground">{email}</span>. They'll get an email with a login link.
             </p>
-            <button onClick={onClose} className="text-sm text-primary font-semibold hover:underline">
-              Done
-            </button>
+            <button onClick={onClose} className="text-sm text-primary font-semibold hover:underline">Done</button>
           </div>
         ) : (
           <form onSubmit={submit} className="space-y-4">
             <label className="block space-y-1.5">
               <span className="text-sm font-semibold text-foreground">Full name</span>
-              <input
-                type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Priya Sharma"
-                className="w-full h-11 px-3 rounded-lg border border-border bg-input text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              />
+              <input type="text" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Priya Sharma" className={inputCls} />
             </label>
             <label className="block space-y-1.5">
               <span className="text-sm font-semibold text-foreground">Work email</span>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="priya@makeadiff.in"
-                className="w-full h-11 px-3 rounded-lg border border-border bg-input text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              />
+              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="priya@makeadiff.in" className={inputCls} />
             </label>
-            {error && (
-              <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">
-                {error}
-              </p>
-            )}
+            {error && <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">{error}</p>}
             <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 h-11 rounded-lg border border-border text-sm font-semibold text-muted-foreground hover:text-foreground transition"
-              >
+              <button type="button" onClick={onClose} className="flex-1 h-11 rounded-lg border border-border text-sm font-semibold text-muted-foreground hover:text-foreground transition">
                 Cancel
               </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 h-11 rounded-lg bg-primary text-primary-foreground text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50 hover:opacity-90 transition"
-              >
+              <button type="submit" disabled={loading} className="flex-1 h-11 rounded-lg bg-primary text-primary-foreground text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50 hover:opacity-90 transition">
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send invite"}
               </button>
             </div>
@@ -420,18 +393,21 @@ function InviteModal({
 
 function UsersPage() {
   const { profile } = Route.useRouteContext();
-  const [tab, setTab] = useState<"pending" | "all">("pending");
-  const [pending, setPending] = useState<Profile[]>([]);
   const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [showInvite, setShowInvite] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<UserStatus | "all">("all");
+  const [roleFilter, setRoleFilter] = useState<UserRole | "all">("all");
 
   const load = async () => {
     setLoading(true);
+    setLoadError(false);
     try {
-      const [p, u] = await Promise.all([getPendingUsers(), getAllUsers()]);
-      setPending(p);
-      setUsers(u);
+      const all = await getAllUsers();
+      setUsers(all);
+    } catch {
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
@@ -439,204 +415,179 @@ function UsersPage() {
 
   useEffect(() => { load(); }, []);
 
-  const handleApprove = async (id: string, role: UserRole) => {
-    try {
-      await approveUser(id, role);
-      toast.success("User approved");
-    } catch {
-      toast.error("Something went wrong");
-    }
-    await load();
-    // Send approval notification (fire-and-forget — don't block UI on email failure)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session?.access_token) return;
-      fetch("/api/notify-approval", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ userId: id }),
-      }).catch(() => {}); // silent — toast was already shown for approval
-    });
-  };
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    users.forEach((u) => { counts[u.status] = (counts[u.status] ?? 0) + 1; });
+    return counts;
+  }, [users]);
 
-  const handleReject = async (id: string) => {
-    try {
-      await rejectUser(id);
-      toast.success("Request rejected");
-    } catch {
-      toast.error("Something went wrong");
-    }
-    await load();
-  };
+  const roleCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    users.forEach((u) => { counts[u.role] = (counts[u.role] ?? 0) + 1; });
+    return counts;
+  }, [users]);
 
-  const handleDisable = async (id: string) => {
-    try {
-      await disableUser(id);
-      toast.success("User disabled");
-    } catch {
-      toast.error("Something went wrong");
-    }
-    await load();
-  };
-
-  const handleEnable = async (id: string) => {
-    try {
-      await enableUser(id);
-      toast.success("User enabled");
-    } catch {
-      toast.error("Something went wrong");
-    }
-    await load();
-  };
-
-  const handleRoleChange = async (id: string, role: UserRole) => {
-    await updateUserRole(id, role);
-    await load();
-  };
-
-  const handleCancel = async (id: string) => {
-    try {
-      await cancelInvite(id);
-      toast.success("Invite cancelled");
-    } catch {
-      toast.error("Something went wrong");
-    }
-    await load();
-  };
-
-  const handleResend = async (email: string, fullName: string) => {
-    try {
-      await resendInvite(email, fullName);
-      toast.success("Invite resent");
-    } catch {
-      toast.error("Something went wrong");
-    }
-  };
-
-  const handleReinvite = async (email: string, fullName: string) => {
-    try {
-      await resendInvite(email, fullName);
-      toast.success("Invite sent");
-    } catch {
-      toast.error("Something went wrong");
-    }
-    await load();
-  };
+  const filtered = useMemo(() => {
+    let result = users;
+    if (statusFilter !== "all") result = result.filter((u) => u.status === statusFilter);
+    if (roleFilter !== "all") result = result.filter((u) => u.role === roleFilter);
+    return sortUsers(result);
+  }, [users, statusFilter, roleFilter]);
 
   const currentRole = profile?.role ?? "cho";
   const canInvite = currentRole === "super_admin";
 
+  const statusLabel = statusFilter === "all" ? "All statuses" : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1);
+  const roleLabel = roleFilter === "all" ? "All roles" : ROLE_LABELS[roleFilter as UserRole];
+
+  const handleApprove = async (id: string, role: UserRole) => {
+    try {
+      await approveUser(id, role);
+      toast.success("User approved");
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session?.access_token) return;
+        fetch("/api/notify-approval", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+          body: JSON.stringify({ userId: id }),
+        }).catch(() => {});
+      });
+    } catch { toast.error("Something went wrong"); }
+    await load();
+  };
+
+  const handleReject = async (id: string) => {
+    try { await rejectUser(id); toast.success("Request rejected"); }
+    catch { toast.error("Something went wrong"); }
+    await load();
+  };
+
+  const handleDisable = async (id: string) => {
+    try { await disableUser(id); toast.success("User disabled"); }
+    catch { toast.error("Something went wrong"); }
+    await load();
+  };
+
+  const handleEnable = async (id: string) => {
+    try { await enableUser(id); toast.success("User enabled"); }
+    catch { toast.error("Something went wrong"); }
+    await load();
+  };
+
+  const handleRoleChange = async (id: string, role: UserRole) => {
+    try { await updateUserRole(id, role); toast.success("Role updated"); }
+    catch { toast.error("Something went wrong"); }
+    await load();
+  };
+
+  const handleCancel = async (id: string) => {
+    try { await cancelInvite(id); toast.success("Invite cancelled"); }
+    catch { toast.error("Something went wrong"); }
+    await load();
+  };
+
+  const handleResend = async (email: string, fullName: string) => {
+    try { await resendInvite(email, fullName); toast.success("Invite resent"); }
+    catch { toast.error("Something went wrong"); }
+  };
+
+  const handleReinvite = async (email: string, fullName: string) => {
+    try { await resendInvite(email, fullName); toast.success("Invite sent"); }
+    catch { toast.error("Something went wrong"); }
+    await load();
+  };
+
   return (
     <div className="px-5 md:px-10 py-6 md:py-10 w-full">
-      <PageGuide pageKey="users" role={currentRole} />
-      <div className="flex items-center justify-between gap-4 mb-8">
+      <PageGuide pageKey="users" role={currentRole as UserRole} />
+
+      <div className="flex items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">Users</h1>
-          <p className="text-sm text-muted-foreground mt-1">Manage access requests and team members.</p>
+          <p className="text-sm text-muted-foreground mt-1">Manage team access and approvals.</p>
         </div>
-        {canInvite && (
-          <button
-            onClick={() => setShowInvite(true)}
-            className="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition shrink-0"
-          >
-            <UserPlus className="h-4 w-4" />
-            <span className="hidden sm:inline">Invite Employee</span>
+        <div className="flex items-center gap-2 shrink-0">
+          <button onClick={load} className="h-9 w-9 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition" title="Refresh">
+            <RefreshCw className="h-4 w-4" />
           </button>
-        )}
+          {canInvite && (
+            <button
+              onClick={() => setShowInvite(true)}
+              className="inline-flex items-center gap-2 h-9 px-4 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition"
+            >
+              <UserPlus className="h-4 w-4" />
+              <span className="hidden sm:inline">Invite</span>
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-secondary/60 rounded-xl p-1 mb-6 w-fit">
-        {(["pending", "all"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
-              tab === t
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {t === "pending" ? (
-              <>
-                Pending Requests
-                {pending.length > 0 && (
-                  <span className="ml-2 inline-flex items-center justify-center h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                    {pending.length}
-                  </span>
-                )}
-              </>
-            ) : (
-              "All Users"
-            )}
-          </button>
-        ))}
-        <button
-          onClick={load}
-          className="ml-1 px-2 py-2 rounded-lg text-muted-foreground hover:text-foreground transition"
-          title="Refresh"
-        >
-          <RefreshCw className="h-4 w-4" />
-        </button>
+      {/* Status filter */}
+      <div className="mb-3">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Status</p>
+        <div className="flex gap-2 flex-wrap">
+          <FilterPill label="All" count={users.length} active={statusFilter === "all"} onClick={() => setStatusFilter("all")} />
+          <FilterPill label="Pending" count={statusCounts["pending"] ?? 0} active={statusFilter === "pending"} onClick={() => setStatusFilter("pending")} variant="pending" />
+          <FilterPill label="Invited" count={statusCounts["invited"] ?? 0} active={statusFilter === "invited"} onClick={() => setStatusFilter("invited")} />
+          <FilterPill label="Active" count={statusCounts["active"] ?? 0} active={statusFilter === "active"} onClick={() => setStatusFilter("active")} />
+          <FilterPill label="Disabled" count={statusCounts["disabled"] ?? 0} active={statusFilter === "disabled"} onClick={() => setStatusFilter("disabled")} />
+        </div>
       </div>
+
+      {/* Role filter */}
+      <div className="mb-4">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Role</p>
+        <div className="flex gap-2 flex-wrap">
+          <FilterPill label="All roles" active={roleFilter === "all"} onClick={() => setRoleFilter("all")} />
+          <FilterPill label="MAD Employee" count={roleCounts["mad_employee"] ?? 0} active={roleFilter === "mad_employee"} onClick={() => setRoleFilter("mad_employee")} />
+          <FilterPill label="CO" count={roleCounts["co"] ?? 0} active={roleFilter === "co"} onClick={() => setRoleFilter("co")} />
+          <FilterPill label="CHO" count={roleCounts["cho"] ?? 0} active={roleFilter === "cho"} onClick={() => setRoleFilter("cho")} />
+        </div>
+      </div>
+
+      <p className="text-xs text-muted-foreground mb-3">
+        Showing <span className="font-semibold text-foreground">{filtered.length} {filtered.length === 1 ? "user" : "users"}</span>
+        {" · "}{statusLabel}{" · "}{roleLabel}
+      </p>
 
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         {loading ? (
-          <div className="py-12 flex justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className="py-12 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+        ) : loadError ? (
+          <div className="py-12 text-center space-y-3">
+            <p className="text-sm text-muted-foreground">Failed to load users.</p>
+            <button onClick={load} className="text-sm text-primary font-semibold hover:underline">Try again</button>
           </div>
-        ) : tab === "pending" ? (
-          pending.length === 0 ? (
-            <div className="py-12 text-center text-sm text-muted-foreground">
-              No pending requests.
-            </div>
-          ) : (
-            <div className="divide-y divide-border">
-              {pending.map((u) => (
-                <PendingRow
-                  key={u.id}
-                  user={u}
-                  onApprove={handleApprove}
-                  onReject={handleReject}
-                />
-              ))}
-            </div>
-          )
-        ) : users.length === 0 ? (
-          <div className="py-12 text-center text-sm text-muted-foreground">No users yet.</div>
+        ) : filtered.length === 0 ? (
+          <div className="py-12 text-center space-y-2">
+            <p className="text-sm text-muted-foreground">No users match these filters.</p>
+            <button onClick={() => { setStatusFilter("all"); setRoleFilter("all"); }} className="text-sm text-primary font-semibold hover:underline">
+              Clear filters
+            </button>
+          </div>
         ) : (
           <div className="divide-y divide-border">
-            {users.map((u) =>
-              u.status === "invited" ? (
-                <InvitedRow
-                  key={u.id}
-                  user={u}
-                  onCancel={handleCancel}
-                  onResend={handleResend}
-                />
-              ) : (
-                <UserRow
-                  key={u.id}
-                  user={u}
-                  currentRole={currentRole as UserRole}
-                  onDisable={handleDisable}
-                  onEnable={handleEnable}
-                  onRoleChange={handleRoleChange}
-                  onReinvite={handleReinvite}
-                />
-              )
-            )}
+            {filtered.map((u) => (
+              <UserRow
+                key={u.id}
+                user={u}
+                currentRole={currentRole as UserRole}
+                onApprove={handleApprove}
+                onReject={handleReject}
+                onDisable={handleDisable}
+                onEnable={handleEnable}
+                onRoleChange={handleRoleChange}
+                onCancel={handleCancel}
+                onResend={handleResend}
+                onReinvite={handleReinvite}
+              />
+            ))}
           </div>
         )}
       </div>
 
       {showInvite && (
-        <InviteModal
-          onClose={() => setShowInvite(false)}
-          onInvited={load}
-        />
+        <InviteModal onClose={() => setShowInvite(false)} onInvited={load} />
       )}
     </div>
   );

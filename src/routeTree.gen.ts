@@ -18,6 +18,7 @@ import { Route as AuthPendingRouteImport } from './routes/auth.pending'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminNewRouteImport } from './routes/admin.new'
+import { Route as AdminCampsRouteImport } from './routes/admin.camps'
 import { Route as AdminSessionsSessionIdRouteImport } from './routes/admin.sessions.$sessionId'
 
 const LoginRoute = LoginRouteImport.update({
@@ -65,6 +66,11 @@ const AdminNewRoute = AdminNewRouteImport.update({
   path: '/new',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCampsRoute = AdminCampsRouteImport.update({
+  id: '/camps',
+  path: '/camps',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSessionsSessionIdRoute = AdminSessionsSessionIdRouteImport.update({
   id: '/sessions/$sessionId',
   path: '/sessions/$sessionId',
@@ -75,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
+  '/admin/camps': typeof AdminCampsRoute
   '/admin/new': typeof AdminNewRoute
   '/admin/users': typeof AdminUsersRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/admin/camps': typeof AdminCampsRoute
   '/admin/new': typeof AdminNewRoute
   '/admin/users': typeof AdminUsersRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -99,6 +107,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
+  '/admin/camps': typeof AdminCampsRoute
   '/admin/new': typeof AdminNewRoute
   '/admin/users': typeof AdminUsersRoute
   '/auth/callback': typeof AuthCallbackRoute
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/login'
+    | '/admin/camps'
     | '/admin/new'
     | '/admin/users'
     | '/auth/callback'
@@ -124,6 +134,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/admin/camps'
     | '/admin/new'
     | '/admin/users'
     | '/auth/callback'
@@ -136,6 +147,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/login'
+    | '/admin/camps'
     | '/admin/new'
     | '/admin/users'
     | '/auth/callback'
@@ -219,6 +231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminNewRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/camps': {
+      id: '/admin/camps'
+      path: '/camps'
+      fullPath: '/admin/camps'
+      preLoaderRoute: typeof AdminCampsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/sessions/$sessionId': {
       id: '/admin/sessions/$sessionId'
       path: '/sessions/$sessionId'
@@ -230,6 +249,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
+  AdminCampsRoute: typeof AdminCampsRoute
   AdminNewRoute: typeof AdminNewRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -237,6 +257,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminCampsRoute: AdminCampsRoute,
   AdminNewRoute: AdminNewRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,

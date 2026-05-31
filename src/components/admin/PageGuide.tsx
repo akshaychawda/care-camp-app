@@ -6,7 +6,7 @@ type GuideItem = { heading: string; body: string };
 type GuideContent = Partial<Record<UserRole, GuideItem[]>>;
 
 const GUIDES: Record<string, GuideContent> = {
-  dashboard: {
+  overview: {
     super_admin: [
       {
         heading: "What you're looking at",
@@ -69,6 +69,41 @@ const GUIDES: Record<string, GuideContent> = {
       {
         heading: "Watching it happen",
         body: "The registrations table below updates every 30 seconds. You can see each family as they complete the flow.",
+      },
+    ],
+  },
+
+  camps: {
+    super_admin: [
+      {
+        heading: "Browse all camps",
+        body: "Every camp across all cities and owners. Use + New Camp to create one. Open camps are live — click in to see registrations in real time.",
+      },
+      {
+        heading: "Filters",
+        body: "Filter by Open/Closed status, city, or owner. The two cards at the top always show a live count of open and closed camps.",
+      },
+    ],
+    mad_employee: [
+      {
+        heading: "Browse all camps",
+        body: "All camps across all cities. Click + New Camp to create one, then share the QR with your CHO before the event.",
+      },
+    ],
+    co: [
+      {
+        heading: "Your camps",
+        body: "Camps you created or that were shared with you. Create a new camp and share the QR link with your CHO before the event.",
+      },
+      {
+        heading: "On camp day",
+        body: "Open the camp session. The fullscreen QR button lets you show the QR directly to parents.",
+      },
+    ],
+    cho: [
+      {
+        heading: "Camps shared with you",
+        body: "Your CO has shared these camps with you. On camp day, open the camp and use the fullscreen QR button to show parents.",
       },
     ],
   },

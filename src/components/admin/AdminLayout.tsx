@@ -1,5 +1,5 @@
 import { Outlet, Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, PlusCircle, Users, LogOut } from "lucide-react";
+import { LayoutDashboard, Tent, Users, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import madLogo from "@/assets/mad-logo.png";
 import { signOut } from "@/lib/auth";
@@ -8,8 +8,8 @@ import { Route } from "@/routes/admin";
 import { Toaster } from "@/components/ui/sonner";
 
 const NAV = [
-  { label: "Dashboard", to: "/admin", icon: LayoutDashboard, exact: true },
-  { label: "New Camp", to: "/admin/new", icon: PlusCircle, exact: false },
+  { label: "Overview", to: "/admin", icon: LayoutDashboard, exact: true },
+  { label: "Camps", to: "/admin/camps", icon: Tent, exact: false },
   { label: "Users", to: "/admin/users", icon: Users, exact: false },
 ];
 
@@ -30,11 +30,9 @@ export function AdminLayout() {
   };
 
   const canSeeUsers = profile?.role === "super_admin" || profile?.role === "mad_employee";
-  const canCreateCamp = profile?.role !== "cho";
 
   const nav = NAV.filter((item) => {
     if (item.to === "/admin/users") return canSeeUsers;
-    if (item.to === "/admin/new") return canCreateCamp;
     return true;
   });
 

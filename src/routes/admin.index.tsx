@@ -1,390 +1,344 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, Plus, Users, Sparkles, Calendar } from "lucide-react";
 import { Route as AdminRoute } from "@/routes/admin";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { getSessions, getCampOwners, getRegistrationTimeline, type CampSession } from "@/lib/api";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
+} from "recharts";
+import {
+  getSessions,
+  getCampOwners,
+  getParentStats,
+  getRegistrationsByWeek,
+  getLiveCamps,
+  type CampSession,
+  type ParentStats,
+} from "@/lib/api";
 import type { Profile } from "@/lib/supabase";
 import { PageGuide } from "@/components/admin/PageGuide";
 
 export const Route = createFileRoute("/admin/")({
-  component: Dashboard,
+  component: Overview,
   head: () => ({
     meta: [
-      { title: "Care Camps Dashboard — MAD Admin" },
-      { name: "description", content: "Internal dashboard for MAD coordinators." },
+      { title: "Overview — MAD Care Camps" },
+      { name: "description", content: "Programme health at a glance." },
     ],
   }),
 });
 
-function Stat({
-  label,
-  value,
-  icon: Icon,
-}: {
-  label: string;
-  value: number;
-  icon: React.ElementType;
-}) {
+const GENDER_COLORS: Record<string, string> = {
+  girl: "#C62828",
+  boy: "#60a5fa",
+  child: "#9ca3af",
+};
+const GENDER_LABELS: Record<string, string> = {
+  girl: "Girls",
+  boy: "Boys",
+  child: "Prefer not to say",
+};
+
+function SectionLabel({ children }: { children: string }) {
   return (
-    <div className="bg-card rounded-xl border border-border p-5">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {label}
-        </span>
-        <div className="h-9 w-9 rounded-lg bg-accent flex items-center justify-center">
-          <Icon className="h-4 w-4 text-accent-foreground" />
-        </div>
-      </div>
-      <div className="text-3xl font-bold tabular-nums text-foreground">
-        {value.toLocaleString("en-IN")}
-      </div>
-    </div>
+    <p className="text-xs font-bold text-muted-foreground/60 uppercase tracking-widest mb-2 mt-5 first:mt-0">
+      {children}
+    </p>
   );
 }
 
-function Dashboard() {
+function Overview() {
   const { profile } = AdminRoute.useRouteContext();
-  const canCreateCamp = profile?.role !== "cho";
 
   const [sessions, setSessions] = useState<CampSession[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [city, setCity] = useState("all");
-  const [area, setArea] = useState("all");
-  const [status, setStatus] = useState<"all" | "open" | "closed">("all");
-  const [ownerId, setOwnerId] = useState("all");
+  const [parentStats, setParentStats] = useState<ParentStats | null>(null);
+  const [weeklyData, setWeeklyData] = useState<{ week: string; count: number }[]>([]);
+  const [liveCamps, setLiveCamps] = useState<{ id: string; city: string; area: string }[]>([]);
   const [owners, setOwners] = useState<Profile[]>([]);
-  const [timeline, setTimeline] = useState<{ date: string; count: number }[]>([]);
+  const [cityFilter, setCityFilter] = useState("all");
+  const [ownerFilter, setOwnerFilter] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
 
-  useEffect(() => {
-    getSessions()
-      .then(setSessions)
-      .catch((e) => setError(e.message ?? "Failed to load sessions"))
-      .finally(() => setLoading(false));
-  }, []);
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [s, ps, weekly, live, o] = await Promise.all([
+        getSessions(),
+        getParentStats(),
+        getRegistrationsByWeek(12),
+        getLiveCamps(),
+        getCampOwners(),
+      ]);
+      setSessions(s);
+      setParentStats(ps);
+      setWeeklyData(weekly);
+      setLiveCamps(live);
+      setOwners(o);
+      setUpdatedAt(new Date());
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  useEffect(() => {
-    getCampOwners().then(setOwners).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    getRegistrationTimeline({
-      city: city === "all" ? undefined : city,
-      area: area === "all" ? undefined : area,
-      isOpen: status === "all" ? undefined : status === "open",
-      ownerId: ownerId === "all" ? undefined : ownerId,
-    })
-      .then(setTimeline)
-      .catch(() => {});
-  }, [city, area, status, ownerId]);
+  useEffect(() => { load(); }, []);
 
   const cities = useMemo(() => Array.from(new Set(sessions.map((s) => s.city))).sort(), [sessions]);
-  const areas = useMemo(
-    () =>
-      Array.from(
-        new Set(sessions.filter((s) => city === "all" || s.city === city).map((s) => s.area)),
-      ).sort(),
-    [city, sessions],
-  );
 
-  const filtered = useMemo(
-    () =>
-      sessions.filter((s) => {
-        if (city !== "all" && s.city !== city) return false;
-        if (area !== "all" && s.area !== area) return false;
-        if (status === "open" && !s.is_open) return false;
-        if (status === "closed" && s.is_open) return false;
-        if (ownerId !== "all") {
-          const owner = owners.find((o) => o.id === ownerId);
-          if (s.owner_name !== (owner?.full_name ?? null)) return false;
-        }
-        return true;
-      }),
-    [sessions, city, area, status, ownerId, owners],
-  );
+  const filteredSessions = useMemo(() => {
+    return sessions.filter((s) => {
+      if (cityFilter !== "all" && s.city !== cityFilter) return false;
+      if (ownerFilter !== "all") {
+        const owner = owners.find((o) => o.id === ownerFilter);
+        if (s.owner_name !== (owner?.full_name ?? null)) return false;
+      }
+      return true;
+    });
+  }, [sessions, cityFilter, ownerFilter, owners]);
+
+  const totalCamps = filteredSessions.length;
+  const activeCamps = filteredSessions.filter((s) => s.is_open).length;
+  const closedCamps = filteredSessions.filter((s) => !s.is_open).length;
 
   const avgDuration = useMemo(() => {
-    const closed = sessions.filter((s) => s.closed_at);
+    const closed = filteredSessions.filter((s) => s.closed_at);
     if (closed.length === 0) return null;
-    const totalMs = closed.reduce((sum, s) => {
-      return sum + (new Date(s.closed_at!).getTime() - new Date(s.created_at).getTime());
-    }, 0);
+    const totalMs = closed.reduce((sum, s) =>
+      sum + (new Date(s.closed_at!).getTime() - new Date(s.created_at).getTime()), 0);
     const avgMin = Math.round(totalMs / closed.length / 60000);
-    if (avgMin < 60) return { text: `${avgMin}m`, count: closed.length };
     const h = Math.floor(avgMin / 60);
     const m = avgMin % 60;
-    return { text: m > 0 ? `${h}h ${m}m` : `${h}h`, count: closed.length };
-  }, [sessions]);
+    return h > 0 ? (m > 0 ? `${h}h ${m}m` : `${h}h`) : `${avgMin}m`;
+  }, [filteredSessions]);
 
-  const totals = useMemo(
-    () => ({
-      cities: new Set(filtered.map((s) => s.city)).size,
-      areas: new Set(filtered.map((s) => s.area)).size,
-      camps: filtered.length,
-      parents: filtered.reduce((a, s) => a + s.parent_count, 0),
-      cards: filtered.reduce((a, s) => a + s.card_count, 0),
-    }),
-    [filtered],
-  );
+  const avgParentsPerCamp = closedCamps > 0
+    ? Math.round(filteredSessions.filter(s => !s.is_open).reduce((a, s) => a + s.parent_count, 0) / closedCamps)
+    : 0;
+
+  const avgCardsPerCamp = closedCamps > 0
+    ? Math.round(filteredSessions.filter(s => !s.is_open).reduce((a, s) => a + s.card_count, 0) / closedCamps)
+    : 0;
+
+  const cardSuccessRate = parentStats && parentStats.totalChildren > 0
+    ? Math.round((parentStats.cardsGenerated / parentStats.totalChildren) * 100)
+    : 0;
+
+  const campsByCity = useMemo(() => {
+    const map: Record<string, number> = {};
+    filteredSessions.forEach((s) => { map[s.city] = (map[s.city] ?? 0) + 1; });
+    return Object.entries(map)
+      .map(([city, count]) => ({ city, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
+  }, [filteredSessions]);
+
+  const genderData = useMemo(() => {
+    if (!parentStats) return [];
+    return parentStats.genderCounts.map((g) => ({
+      name: GENDER_LABELS[g.gender] ?? g.gender,
+      value: g.count,
+      color: GENDER_COLORS[g.gender] ?? "#888",
+    }));
+  }, [parentStats]);
+
+  const updatedLabel = updatedAt
+    ? `↻ Updated just now`
+    : "↻ Loading…";
 
   return (
-    <div className="px-5 md:px-10 py-6 md:py-10 w-full">
-      <PageGuide pageKey="dashboard" role={profile?.role ?? "cho"} />
-      <div className="flex items-start justify-between gap-4 mb-8">
+    <div className="px-5 md:px-10 py-6 md:py-10 w-full max-w-6xl">
+      <PageGuide pageKey="overview" role={profile?.role ?? "cho"} />
+
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4 mb-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Care Camps Dashboard</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {profile?.role === "cho"
-              ? "Camps shared with you."
-              : profile?.role === "co"
-                ? "Your camps and camps shared with you."
-                : "Monitor activity across all areas."}
-          </p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Overview</h1>
+          <p className="text-sm text-muted-foreground mt-1">Programme health at a glance</p>
         </div>
-        {canCreateCamp && (
-          <Link
-            to="/admin/new"
-            className="inline-flex items-center gap-2 h-11 px-4 rounded-lg bg-primary text-primary-foreground font-semibold text-sm hover:opacity-90 transition shrink-0"
+        <div className="flex gap-2 shrink-0 flex-wrap justify-end">
+          <select
+            value={cityFilter}
+            onChange={(e) => setCityFilter(e.target.value)}
+            className="h-9 px-3 rounded-lg border border-border bg-input text-sm font-medium text-foreground"
           >
-            <Plus className="h-4 w-4" /> <span className="hidden sm:inline">New Camp</span>
+            <option value="all">All cities</option>
+            {cities.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+          {owners.length > 0 && (
+            <select
+              value={ownerFilter}
+              onChange={(e) => setOwnerFilter(e.target.value)}
+              className="h-9 px-3 rounded-lg border border-border bg-input text-sm font-medium text-foreground"
+            >
+              <option value="all">All owners</option>
+              {owners.map((o) => <option key={o.id} value={o.id}>{o.full_name || o.id.slice(0, 8)}</option>)}
+            </select>
+          )}
+        </div>
+      </div>
+
+      {/* Live banner */}
+      {liveCamps.length > 0 && (
+        <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-xl px-4 py-3 mb-4 flex items-center justify-between gap-3">
+          <p className="text-white text-sm font-semibold min-w-0">
+            <span className="inline-block w-2 h-2 rounded-full bg-white mr-2 animate-pulse" />
+            {liveCamps.length} camp{liveCamps.length > 1 ? "s" : ""} live now —{" "}
+            {liveCamps.slice(0, 3).map((c) => `${c.city} · ${c.area}`).join(", ")}
+            {liveCamps.length > 3 && ` +${liveCamps.length - 3} more`}
+          </p>
+          <Link
+            to="/admin/sessions/$sessionId"
+            params={{ sessionId: liveCamps[0].id }}
+            className="shrink-0 bg-white text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-lg hover:opacity-90 transition"
+          >
+            Go to camp →
           </Link>
-        )}
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-        <Stat label="Cities" value={totals.cities} icon={Calendar} />
-        <Stat label="Areas" value={totals.areas} icon={Calendar} />
-        <Stat label="Total Camps" value={totals.camps} icon={Calendar} />
-        <Stat label="Parents" value={totals.parents} icon={Users} />
-        <Stat label="Dream Cards" value={totals.cards} icon={Sparkles} />
-      </div>
-
-      {avgDuration && (profile?.role === "super_admin" || profile?.role === "mad_employee") && (
-        <p className="text-sm text-muted-foreground mb-4">
-          Avg camp duration:{" "}
-          <span className="font-semibold text-foreground">{avgDuration.text}</span>
-          <span className="ml-1">
-            · based on {avgDuration.count} closed camp{avgDuration.count !== 1 ? "s" : ""}
-          </span>
-        </p>
+        </div>
       )}
 
-      <div className="bg-card border border-border rounded-xl p-5 mb-6">
-        <h2 className="font-semibold text-foreground mb-4">Registrations — last 30 days</h2>
-        {timeline.every((d) => d.count === 0) ? (
-          <p className="text-sm text-muted-foreground text-center py-8">
-            No registrations in the last 30 days.
+      <p className="text-xs text-muted-foreground mb-4">{updatedLabel}</p>
+
+      {/* LAYER 1: Reach */}
+      <SectionLabel>Reach</SectionLabel>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+        <div className="bg-card border border-border rounded-xl p-5">
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Children</p>
+          <p className="text-4xl font-black text-foreground">{(parentStats?.totalChildren ?? 0).toLocaleString("en-IN")}</p>
+          <p className="text-xs text-muted-foreground mt-2">Dreams captured</p>
+        </div>
+        <div className="bg-card border-2 border-primary rounded-xl p-5">
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Parents Registered</p>
+          <p className="text-4xl font-black text-primary">{(parentStats?.uniqueParents ?? 0).toLocaleString("en-IN")}</p>
+          <p className="text-xs text-muted-foreground mt-2">Unique families reached</p>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-5">
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Card Success Rate</p>
+          <p className="text-4xl font-black text-foreground">{cardSuccessRate}%</p>
+          <p className="text-xs text-emerald-500 font-semibold mt-2">
+            {(parentStats?.cardsGenerated ?? 0)} of {(parentStats?.totalChildren ?? 0)} generated
           </p>
+        </div>
+      </div>
+
+      {/* LAYER 2: Activity */}
+      <SectionLabel>Activity</SectionLabel>
+      <div className="grid grid-cols-3 gap-3 mb-3">
+        <div className="bg-secondary/40 border border-border rounded-xl p-4 flex items-center gap-3">
+          <div className="text-2xl">🏕️</div>
+          <div>
+            <p className="text-2xl font-black text-foreground">{totalCamps}</p>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Total Camps</p>
+          </div>
+        </div>
+        <div className="bg-secondary/40 border border-border rounded-xl p-4 flex items-center gap-3">
+          <div className="text-2xl">🟢</div>
+          <div>
+            <p className="text-2xl font-black text-emerald-500">{activeCamps}</p>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Active Now</p>
+          </div>
+        </div>
+        <div className="bg-secondary/40 border border-border rounded-xl p-4 flex items-center gap-3">
+          <div className="text-2xl">🔒</div>
+          <div>
+            <p className="text-2xl font-black text-foreground">{closedCamps}</p>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Closed</p>
+          </div>
+        </div>
+      </div>
+
+      {/* LAYER 3: Efficiency */}
+      {closedCamps > 0 && (
+        <>
+          <SectionLabel>Efficiency (closed camps)</SectionLabel>
+          <div className="grid grid-cols-3 gap-3 mb-5">
+            <div className="bg-card border border-border/50 rounded-xl p-4">
+              <p className="text-xl font-black text-foreground">{avgDuration ?? "—"}</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-1">Avg Duration</p>
+              <p className="text-xs text-muted-foreground mt-1">Across {closedCamps} closed camps</p>
+            </div>
+            <div className="bg-card border border-border/50 rounded-xl p-4">
+              <p className="text-xl font-black text-foreground">{avgParentsPerCamp}</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-1">Avg Parents / Camp</p>
+            </div>
+            <div className="bg-card border border-border/50 rounded-xl p-4">
+              <p className="text-xl font-black text-foreground">{avgCardsPerCamp}</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-1">Avg Cards / Camp</p>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* LAYER 4: Trends & Breakdown */}
+      <SectionLabel>Trends & Breakdown</SectionLabel>
+      <div className="bg-card border border-border rounded-xl p-5 mb-3">
+        <p className="text-sm font-bold text-foreground mb-4">Registrations per week — last 12 weeks</p>
+        {weeklyData.every((d) => d.count === 0) ? (
+          <p className="text-sm text-muted-foreground text-center py-8">No registrations yet.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={timeline} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-              <XAxis
-                dataKey="date"
-                tick={{ fontSize: 10 }}
-                tickFormatter={(d: string) => {
-                  const date = new Date(d + "T00:00:00");
-                  return `${date.getDate()}/${date.getMonth() + 1}`;
-                }}
-                interval={4}
-              />
+          <ResponsiveContainer width="100%" height={140}>
+            <BarChart data={weeklyData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+              <XAxis dataKey="week" tick={{ fontSize: 10 }} />
               <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-              <Tooltip
-                formatter={(value: number) => [value, "Registrations"]}
-                labelFormatter={(label: string) =>
-                  new Date(label + "T00:00:00").toLocaleDateString("en-IN", {
-                    day: "numeric",
-                    month: "short",
-                  })
-                }
-              />
+              <Tooltip formatter={(v: number) => [v, "Registrations"]} />
               <Bar dataKey="count" fill="var(--primary)" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}
       </div>
 
-      <div className="bg-card rounded-xl border border-border overflow-hidden">
-        <div className="px-5 py-4 border-b border-border flex flex-wrap items-center gap-3">
-          <h2 className="font-semibold text-foreground mr-auto">Camps</h2>
-          <select
-            value={city}
-            onChange={(e) => { setCity(e.target.value); setArea("all"); }}
-            className="h-9 px-3 rounded-md border border-border bg-input text-sm font-medium text-foreground"
-            aria-label="Filter by city"
-          >
-            <option value="all">All Cities</option>
-            {cities.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <select
-            value={area}
-            onChange={(e) => setArea(e.target.value)}
-            className="h-9 px-3 rounded-md border border-border bg-input text-sm font-medium text-foreground"
-            aria-label="Filter by area"
-          >
-            <option value="all">All Areas</option>
-            {areas.map((a) => <option key={a} value={a}>{a}</option>)}
-          </select>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value as "all" | "open" | "closed")}
-            className="h-9 px-3 rounded-md border border-border bg-input text-sm font-medium text-foreground"
-            aria-label="Filter by status"
-          >
-            <option value="all">All Status</option>
-            <option value="open">Open</option>
-            <option value="closed">Closed</option>
-          </select>
-          {owners.length > 0 && (
-            <select
-              value={ownerId}
-              onChange={(e) => setOwnerId(e.target.value)}
-              className="h-9 px-3 rounded-md border border-border bg-input text-sm font-medium text-foreground"
-              aria-label="Filter by owner"
-            >
-              <option value="all">All Owners</option>
-              {owners.map((o) => (
-                <option key={o.id} value={o.id}>{o.full_name || o.id.slice(0, 8)}</option>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {campsByCity.length > 0 && (
+          <div className="bg-card border border-border rounded-xl p-5">
+            <p className="text-sm font-bold text-foreground mb-4">Camps by city</p>
+            <div className="space-y-3">
+              {campsByCity.map((c) => (
+                <div key={c.city} className="flex items-center gap-3">
+                  <span className="text-sm text-foreground w-24 shrink-0 font-medium">{c.city}</span>
+                  <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full"
+                      style={{ width: `${(c.count / (campsByCity[0]?.count ?? 1)) * 100}%` }}
+                    />
+                  </div>
+                  <span className="text-sm font-bold text-muted-foreground w-6 text-right">{c.count}</span>
+                </div>
               ))}
-            </select>
-          )}
-        </div>
-
-        {loading ? (
-          <div className="px-5 py-10 text-center text-sm text-muted-foreground">Loading camps…</div>
-        ) : error ? (
-          <div className="px-5 py-10 text-center text-sm text-destructive">{error}</div>
-        ) : filtered.length === 0 ? (
-          <div className="px-5 py-10 text-center text-sm text-muted-foreground">
-            {sessions.length === 0
-              ? profile?.role === "cho"
-                ? "No camps have been shared with you yet. Ask your CO to share a camp with you."
-                : "No camps yet. Create one to get started."
-              : "No camps match these filters."}
+            </div>
           </div>
-        ) : (
-          <>
-            {/* Mobile: stacked cards. Tablet: 2-col grid. */}
-            <div className="lg:hidden grid grid-cols-1 md:grid-cols-2 gap-3 p-3">
-              {filtered.map((s) => (
-                <Link
-                  key={s.id}
-                  to="/admin/sessions/$sessionId"
-                  params={{ sessionId: s.id }}
-                  className="block p-4 rounded-lg border border-border bg-background hover:bg-secondary/40 transition"
-                >
-                  <div className="font-semibold text-foreground">
-                    {s.city} — {s.area}
-                  </div>
-                  {s.owner_name && (
-                    <div className="text-xs text-muted-foreground mt-0.5">{s.owner_name}</div>
-                  )}
-                  <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <Tag icon={<Calendar className="h-3 w-3" />}>
-                      {new Date(s.date + "T00:00:00").toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </Tag>
-                    <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${
-                        s.is_open
-                          ? "bg-emerald-500/15 text-emerald-400"
-                          : "bg-secondary text-muted-foreground"
-                      }`}
-                    >
-                      {s.is_open ? "● Open" : "Closed"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-5 mt-4 pt-3 border-t border-border">
-                    <div>
-                      <div className="font-bold tabular-nums text-foreground">{s.parent_count}</div>
-                      <div className="text-xs text-muted-foreground">Parents</div>
-                    </div>
-                    <div>
-                      <div className="font-bold tabular-nums text-foreground">{s.card_count}</div>
-                      <div className="text-xs text-muted-foreground">Cards</div>
-                    </div>
-                    <span className="ml-auto inline-flex items-center gap-1 text-primary font-semibold text-sm">
-                      View <ArrowRight className="h-4 w-4" />
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
+        )}
 
-            {/* Desktop: full table */}
-            <div className="hidden lg:block overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-secondary/60 text-xs uppercase tracking-wider text-muted-foreground">
-                  <tr>
-                    <th className="text-left font-semibold px-5 py-3">Camp</th>
-                    <th className="text-left font-semibold px-5 py-3">Owner</th>
-                    <th className="text-left font-semibold px-5 py-3">Date</th>
-                    <th className="text-left font-semibold px-5 py-3">Status</th>
-                    <th className="text-right font-semibold px-5 py-3">Parents</th>
-                    <th className="text-right font-semibold px-5 py-3">Cards</th>
-                    <th className="text-right font-semibold px-5 py-3">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {filtered.map((s) => (
-                    <tr key={s.id} className="hover:bg-secondary/30 group">
-                      <td className="px-5 py-3 font-semibold text-foreground">
-                        {s.city} — {s.area}
-                      </td>
-                      <td className="px-5 py-3 text-muted-foreground text-sm">{s.owner_name || "—"}</td>
-                      <td className="px-5 py-3 text-muted-foreground tabular-nums">
-                        {new Date(s.date + "T00:00:00").toLocaleDateString("en-IN", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </td>
-                      <td className="px-5 py-3">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${
-                            s.is_open
-                              ? "bg-emerald-500/15 text-emerald-400"
-                              : "bg-secondary text-muted-foreground"
-                          }`}
-                        >
-                          {s.is_open ? "● Open" : "Closed"}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 text-right font-bold tabular-nums">
-                        {s.parent_count}
-                      </td>
-                      <td className="px-5 py-3 text-right font-bold tabular-nums">
-                        {s.card_count}
-                      </td>
-                      <td className="px-5 py-3 text-right">
-                        <Link
-                          to="/admin/sessions/$sessionId"
-                          params={{ sessionId: s.id }}
-                          className="inline-flex items-center gap-1 text-primary font-semibold group-hover:gap-2 transition-all"
-                        >
-                          View <ArrowRight className="h-4 w-4" />
-                        </Link>
-                      </td>
-                    </tr>
+        {genderData.length > 0 && (
+          <div className="bg-card border border-border rounded-xl p-5">
+            <p className="text-sm font-bold text-foreground mb-2">Children by gender</p>
+            <ResponsiveContainer width="100%" height={160}>
+              <PieChart>
+                <Pie
+                  data={genderData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={45}
+                  outerRadius={65}
+                  paddingAngle={3}
+                  dataKey="value"
+                >
+                  {genderData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </>
+                </Pie>
+                <Legend formatter={(value: string) => <span style={{ fontSize: 12 }}>{value}</span>} />
+                <Tooltip formatter={(v: number) => [v, "Children"]} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         )}
       </div>
-    </div>
-  );
-}
 
-function Tag({ children, icon }: { children: React.ReactNode; icon?: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-secondary text-secondary-foreground text-xs font-medium">
-      {icon}
-      {children}
-    </span>
+      {loading && (
+        <div className="fixed inset-0 bg-background/50 flex items-center justify-center z-50 pointer-events-none">
+          <div className="bg-card border border-border rounded-xl px-6 py-4 text-sm font-semibold text-foreground">
+            Loading overview…
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
