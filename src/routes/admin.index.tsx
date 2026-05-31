@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Route as AdminRoute } from "@/routes/admin";
+import { Users, Sparkles, Tent, Clock, UserCheck, Radio, TrendingUp } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from "recharts";
@@ -26,11 +27,13 @@ export const Route = createFileRoute("/admin/")({
   }),
 });
 
-function SectionLabel({ children }: { children: string }) {
+// Small label used inside tiles — muted, spaced, minimal
+function TileLabel({ icon: Icon, children }: { icon: React.ElementType; children: string }) {
   return (
-    <p className="text-xs font-bold text-muted-foreground/60 uppercase tracking-widest mb-2 mt-5 first:mt-0">
-      {children}
-    </p>
+    <div className="flex items-center gap-1.5 mb-3">
+      <Icon className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
+      <span className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-widest">{children}</span>
+    </div>
   );
 }
 
@@ -106,10 +109,6 @@ function Overview() {
     ? Math.round(filteredSessions.filter(s => !s.is_open).reduce((a, s) => a + s.parent_count, 0) / closedCamps)
     : 0;
 
-  const avgCardsPerCamp = closedCamps > 0
-    ? Math.round(filteredSessions.filter(s => !s.is_open).reduce((a, s) => a + s.card_count, 0) / closedCamps)
-    : 0;
-
   const cardSuccessRate = parentStats && parentStats.totalChildren > 0
     ? Math.round((parentStats.cardsGenerated / parentStats.totalChildren) * 100)
     : 0;
@@ -124,24 +123,24 @@ function Overview() {
   }, [filteredSessions]);
 
   const updatedLabel = updatedAt
-    ? `↻ Updated at ${updatedAt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`
-    : loadError ? "↻ Failed to load — " : "↻ Loading…";
+    ? `↻ ${updatedAt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`
+    : loadError ? "Failed to load" : "Loading…";
 
   return (
     <div className="px-5 md:px-10 py-6 md:py-10 w-full max-w-3xl mx-auto">
       <PageGuide pageKey="overview" role={profile?.role ?? "cho"} />
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 mb-4">
+      <div className="flex items-start justify-between gap-4 mb-5">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">Overview</h1>
-          <p className="text-sm text-muted-foreground mt-1">Programme health at a glance</p>
+          <p className="text-xs text-muted-foreground/60 mt-1">{updatedLabel}{loadError && <button onClick={load} className="ml-2 text-primary underline">Retry</button>}</p>
         </div>
         <div className="flex gap-2 shrink-0 flex-wrap justify-end">
           <select
             value={cityFilter}
             onChange={(e) => setCityFilter(e.target.value)}
-            className="h-9 px-3 rounded-lg border border-border bg-input text-sm font-medium text-foreground"
+            className="h-8 px-3 rounded-lg border border-border bg-input text-xs font-medium text-foreground"
           >
             <option value="all">All cities</option>
             {cities.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -150,7 +149,7 @@ function Overview() {
             <select
               value={ownerFilter}
               onChange={(e) => setOwnerFilter(e.target.value)}
-              className="h-9 px-3 rounded-lg border border-border bg-input text-sm font-medium text-foreground"
+              className="h-8 px-3 rounded-lg border border-border bg-input text-xs font-medium text-foreground"
             >
               <option value="all">All owners</option>
               {owners.map((o) => <option key={o.id} value={o.id}>{o.full_name || o.id.slice(0, 8)}</option>)}
@@ -159,9 +158,9 @@ function Overview() {
         </div>
       </div>
 
-      {/* Live banner — only when camps are open */}
+      {/* Live banner */}
       {liveCamps.length > 0 && (
-        <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-xl px-4 py-3 mb-4 flex items-center justify-between gap-3">
+        <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 rounded-xl px-4 py-3 mb-6 flex items-center justify-between gap-3">
           <p className="text-white text-sm font-semibold min-w-0">
             <span className="inline-block w-2 h-2 rounded-full bg-white mr-2 animate-pulse" />
             {liveCamps.length} camp{liveCamps.length > 1 ? "s" : ""} live now —{" "}
@@ -178,118 +177,132 @@ function Overview() {
         </div>
       )}
 
-      {/* Status row */}
-      <div className="flex items-center gap-2 mb-4">
-        <p className="text-xs text-muted-foreground flex-1">{updatedLabel}</p>
-        {loadError && (
-          <button onClick={load} className="text-xs text-primary font-semibold hover:underline">
-            Retry
-          </button>
-        )}
-      </div>
-
-      {/* REACH */}
-      <SectionLabel>Reach</SectionLabel>
+      {/* Row 1 — Reach */}
       <div className="grid grid-cols-3 gap-3 mb-3">
-        <div className="bg-card border border-border rounded-xl p-5">
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Children</p>
-          <p className="text-4xl font-black text-foreground">{(parentStats?.totalChildren ?? 0).toLocaleString("en-IN")}</p>
-          <p className="text-xs text-muted-foreground mt-2">Dreams captured</p>
+        {/* Children */}
+        <div className="bg-secondary/50 rounded-xl p-5">
+          <TileLabel icon={Users}>Children</TileLabel>
+          <p className="text-4xl font-black text-foreground leading-none">
+            {(parentStats?.totalChildren ?? 0).toLocaleString("en-IN")}
+          </p>
+          <p className="text-xs text-muted-foreground mt-2.5">Dreams captured</p>
         </div>
-        <div className="bg-card border-2 border-primary rounded-xl p-5">
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Parents Registered</p>
-          <p className="text-4xl font-black text-primary">{(parentStats?.uniqueParents ?? 0).toLocaleString("en-IN")}</p>
-          <p className="text-xs text-muted-foreground mt-2">Unique families reached</p>
+
+        {/* Parents — primary KPI, subtle tint */}
+        <div className="bg-primary/[0.07] rounded-xl p-5">
+          <TileLabel icon={Users}>Parents</TileLabel>
+          <p className="text-4xl font-black text-primary leading-none">
+            {(parentStats?.uniqueParents ?? 0).toLocaleString("en-IN")}
+          </p>
+          <p className="text-xs text-muted-foreground mt-2.5">Unique families reached</p>
         </div>
-        <div className="bg-card border border-border rounded-xl p-5">
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Card Success Rate</p>
-          <p className="text-4xl font-black text-foreground">{cardSuccessRate}%</p>
-          <p className="text-xs text-emerald-500 font-semibold mt-2">
-            {(parentStats?.cardsGenerated ?? 0)} of {(parentStats?.totalChildren ?? 0)} generated
+
+        {/* Card rate */}
+        <div className="bg-secondary/50 rounded-xl p-5">
+          <TileLabel icon={Sparkles}>Card rate</TileLabel>
+          <p className="text-4xl font-black text-foreground leading-none">{cardSuccessRate}%</p>
+          <p className="text-xs text-emerald-500 font-medium mt-2.5 flex items-center gap-1">
+            <TrendingUp className="h-3 w-3" />
+            {(parentStats?.cardsGenerated ?? 0)} of {(parentStats?.totalChildren ?? 0)}
           </p>
         </div>
       </div>
 
-      {/* ACTIVITY */}
-      <SectionLabel>Activity</SectionLabel>
-      <div className="grid grid-cols-3 gap-3 mb-3">
-        <div className="bg-secondary/40 border border-border rounded-xl p-4 flex items-center gap-3">
-          <div className="text-2xl">🏕️</div>
-          <div>
-            <p className="text-2xl font-black text-foreground">{totalCamps}</p>
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Total Camps</p>
+      {/* Row 2 — Ops */}
+      <div className="grid grid-cols-3 gap-3 mb-6">
+        {/* Camps */}
+        <div className="bg-secondary/50 rounded-xl p-5">
+          <TileLabel icon={Tent}>Camps</TileLabel>
+          <p className="text-4xl font-black text-foreground leading-none">{totalCamps}</p>
+          <div className="flex items-center gap-2.5 mt-2.5">
+            {activeCamps > 0 && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">
+                <Radio className="h-2.5 w-2.5" />{activeCamps} live
+              </span>
+            )}
+            <span className="text-xs text-muted-foreground">{closedCamps} closed</span>
           </div>
         </div>
-        <div className="bg-secondary/40 border border-border rounded-xl p-4 flex items-center gap-3">
-          <div className="text-2xl">🟢</div>
-          <div>
-            <p className="text-2xl font-black text-emerald-500">{activeCamps}</p>
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Active Now</p>
-          </div>
-        </div>
-        <div className="bg-secondary/40 border border-border rounded-xl p-4 flex items-center gap-3">
-          <div className="text-2xl">🔒</div>
-          <div>
-            <p className="text-2xl font-black text-foreground">{closedCamps}</p>
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Closed</p>
-          </div>
-        </div>
-      </div>
 
-      {/* EFFICIENCY */}
-      <SectionLabel>Efficiency</SectionLabel>
-      <div className="grid grid-cols-3 gap-3 mb-3">
-        <div className="bg-card border border-border/50 rounded-xl p-4">
-          <p className="text-xl font-black text-foreground">{avgDuration ?? "—"}</p>
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-1">Avg Duration</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {closedCamps > 0 ? `Across ${closedCamps} closed camp${closedCamps > 1 ? "s" : ""}` : "No closed camps yet"}
+        {/* Avg duration */}
+        <div className="bg-secondary/50 rounded-xl p-5">
+          <TileLabel icon={Clock}>Avg duration</TileLabel>
+          <p className="text-4xl font-black text-foreground leading-none">{avgDuration ?? "—"}</p>
+          <p className="text-xs text-muted-foreground mt-2.5">
+            {closedCamps > 0 ? `Across ${closedCamps} camps` : "No closed camps yet"}
           </p>
         </div>
-        <div className="bg-card border border-border/50 rounded-xl p-4">
-          <p className="text-xl font-black text-foreground">{closedCamps > 0 ? avgParentsPerCamp : "—"}</p>
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-1">Avg Parents / Camp</p>
-          <p className="text-xs text-muted-foreground mt-1">Per closed camp</p>
-        </div>
-        <div className="bg-card border border-border/50 rounded-xl p-4">
-          <p className="text-xl font-black text-foreground">{closedCamps > 0 ? avgCardsPerCamp : "—"}</p>
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mt-1">Avg Cards / Camp</p>
-          <p className="text-xs text-muted-foreground mt-1">Per closed camp</p>
+
+        {/* Avg turnout */}
+        <div className="bg-secondary/50 rounded-xl p-5">
+          <TileLabel icon={UserCheck}>Avg turnout</TileLabel>
+          <p className="text-4xl font-black text-foreground leading-none">
+            {closedCamps > 0 ? avgParentsPerCamp : "—"}
+          </p>
+          <p className="text-xs text-muted-foreground mt-2.5">Parents per camp</p>
         </div>
       </div>
 
-      {/* TRENDS */}
-      <SectionLabel>Trends & Breakdown</SectionLabel>
-      <div className="bg-card border border-border rounded-xl p-5 mb-3">
-        <p className="text-sm font-bold text-foreground mb-4">Registrations per week — last 12 weeks</p>
+      {/* Chart */}
+      <div className="bg-secondary/50 rounded-xl p-5 mb-4">
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm font-semibold text-foreground">Registrations</p>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Last 12 weeks</span>
+            {(parentStats?.totalChildren ?? 0) > 0 && (
+              <span className="text-xs font-semibold text-muted-foreground bg-secondary px-2 py-0.5 rounded-md">
+                {(parentStats?.totalChildren ?? 0).toLocaleString("en-IN")} total
+              </span>
+            )}
+          </div>
+        </div>
         {weeklyData.every((d) => d.count === 0) ? (
           <p className="text-sm text-muted-foreground text-center py-8">No registrations yet.</p>
         ) : (
-          <ResponsiveContainer width="100%" height={140}>
-            <BarChart data={weeklyData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-              <XAxis dataKey="week" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-              <Tooltip formatter={(v: number) => [v, "Registrations"]} />
+          <ResponsiveContainer width="100%" height={120}>
+            <BarChart data={weeklyData} margin={{ top: 0, right: 0, left: -28, bottom: 0 }}>
+              <XAxis
+                dataKey="week"
+                tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+                axisLine={false}
+                tickLine={false}
+                allowDecimals={false}
+              />
+              <Tooltip
+                contentStyle={{
+                  background: "var(--card)",
+                  border: "1px solid var(--border)",
+                  borderRadius: 8,
+                  fontSize: 12,
+                }}
+                formatter={(v: number) => [v, "Registrations"]}
+              />
               <Bar dataKey="count" fill="var(--primary)" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}
       </div>
 
+      {/* Camps by city */}
       {campsByCity.length > 0 && (
-        <div className="bg-card border border-border rounded-xl p-5">
-          <p className="text-sm font-bold text-foreground mb-4">Camps by city</p>
+        <div className="bg-secondary/50 rounded-xl p-5">
+          <p className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-4">By city</p>
           <div className="space-y-3">
             {campsByCity.map((c) => (
               <div key={c.city} className="flex items-center gap-3">
-                <span className="text-sm text-foreground w-24 shrink-0 font-medium">{c.city}</span>
-                <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
+                <span className="text-sm font-medium text-foreground w-24 shrink-0">{c.city}</span>
+                <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
                   <div
                     className="h-full bg-primary rounded-full"
                     style={{ width: `${(c.count / (campsByCity[0]?.count ?? 1)) * 100}%` }}
                   />
                 </div>
-                <span className="text-sm font-bold text-muted-foreground w-6 text-right">{c.count}</span>
+                <span className="text-xs font-bold text-muted-foreground w-5 text-right shrink-0">{c.count}</span>
               </div>
             ))}
           </div>
@@ -299,7 +312,7 @@ function Overview() {
       {loading && (
         <div className="fixed inset-0 bg-background/50 flex items-center justify-center z-50 pointer-events-none">
           <div className="bg-card border border-border rounded-xl px-6 py-4 text-sm font-semibold text-foreground">
-            Loading overview…
+            Loading…
           </div>
         </div>
       )}
