@@ -136,7 +136,7 @@ function Overview() {
     : loadError ? "Failed to load" : "Loading…";
 
   return (
-    <div className="px-5 md:px-10 py-6 md:py-10 w-full max-w-4xl mx-auto">
+    <div className="px-5 md:px-10 py-6 md:py-10 w-full max-w-[1400px] mx-auto">
       <PageGuide pageKey="overview" role={profile?.role ?? "cho"} />
 
       {/* Header */}
