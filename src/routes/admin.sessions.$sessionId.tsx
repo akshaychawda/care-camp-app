@@ -310,7 +310,7 @@ function SessionDetail() {
   });
 
   return (
-    <div className="px-5 md:px-8 lg:px-10 py-6 md:py-10 max-w-6xl mx-auto">
+    <div className="px-5 md:px-8 lg:px-10 py-6 md:py-10 w-full max-w-[1400px] mx-auto">
       <Link
         to="/admin/camps"
         className="inline-flex items-center gap-2 text-sm font-semibold text-muted-foreground hover:text-foreground mb-4"

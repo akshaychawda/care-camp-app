@@ -75,7 +75,7 @@ function CampsPage() {
   const cityLabel = cityFilter === "all" ? "All cities" : cityFilter;
 
   return (
-    <div className="px-5 md:px-10 py-6 md:py-10 w-full max-w-5xl mx-auto">
+    <div className="px-5 md:px-10 py-6 md:py-10 w-full max-w-[1400px] mx-auto">
       <PageGuide pageKey="camps" role={profile?.role ?? "cho"} />
 
       {/* Header */}

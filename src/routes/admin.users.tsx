@@ -500,7 +500,7 @@ function UsersPage() {
   };
 
   return (
-    <div className="px-5 md:px-10 py-6 md:py-10 w-full max-w-5xl mx-auto">
+    <div className="px-5 md:px-10 py-6 md:py-10 w-full max-w-[1400px] mx-auto">
       <PageGuide pageKey="users" role={currentRole as UserRole} />
 
       <div className="flex items-center justify-between gap-4 mb-6">
