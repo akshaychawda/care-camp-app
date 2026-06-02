@@ -59,6 +59,7 @@ git push origin main  # triggers Vercel auto-deploy
 - `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` — client-side Supabase
 - `SUPABASE_SERVICE_ROLE_KEY` — server-side only (API functions)
 - `OPENAI_API_KEY` — gpt-4o-mini + gpt-image-2
+- `BREVO_SMTP_USER` + `BREVO_SMTP_PASS` — Brevo SMTP login + key, used by `api/notify-approval.ts` to send the approval email via the same Brevo relay as Supabase auth mail. Optional overrides: `BREVO_SMTP_HOST` (default `smtp-relay.brevo.com`), `BREVO_SMTP_PORT` (default `587`), `MAIL_FROM` (default `noreply@makeadiff.in`), `APP_URL`. (Replaces the old `BREVO_API_KEY` HTTP-API approach.)
 
 ## Original What this is (kept for context)
 
