@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft,
-  CheckCircle2,
   XCircle,
   Copy,
   Check,
@@ -11,6 +10,7 @@ import {
   X,
   RefreshCw,
   Radio,
+  ExternalLink,
 } from "lucide-react";
 import { PageGuide } from "@/components/admin/PageGuide";
 import QRCode from "qrcode";
@@ -177,15 +177,44 @@ function SharePanel({ campId }: { campId: string }) {
   );
 }
 
-function CardYesNo({ ok }: { ok: boolean }) {
-  return ok ? (
-    <span className="inline-flex items-center gap-1.5 text-whatsapp font-semibold text-sm">
-      <CheckCircle2 className="h-4 w-4" /> Card generated
-    </span>
-  ) : (
-    <span className="inline-flex items-center gap-1.5 text-muted-foreground text-sm">
-      <XCircle className="h-4 w-4" /> Pending
-    </span>
+function CardCell({ reg }: { reg: Registration }) {
+  const [copied, setCopied] = useState(false);
+
+  if (!reg.card_generated) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-muted-foreground text-sm">
+        <XCircle className="h-4 w-4" /> Pending
+      </span>
+    );
+  }
+
+  const url = `${window.location.origin}/card/${reg.id}`;
+  const copy = async () => {
+    await navigator.clipboard.writeText(url).catch(() => {});
+    setCopied(true);
+    toast.success(`${reg.child_name}'s card link copied!`);
+    setTimeout(() => setCopied(false), 1800);
+  };
+
+  return (
+    <div className="flex items-center gap-3">
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1.5 text-primary font-semibold text-sm hover:underline"
+      >
+        <ExternalLink className="h-3.5 w-3.5" /> View card
+      </a>
+      <button
+        onClick={copy}
+        title="Copy card link"
+        className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground text-sm transition"
+      >
+        {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+        <span className="hidden xl:inline">{copied ? "Copied" : "Copy link"}</span>
+      </button>
+    </div>
   );
 }
 
@@ -441,18 +470,18 @@ function SessionDetail() {
               <div className="lg:hidden divide-y divide-border/60">
                 {registrations.map((r) => (
                   <div key={r.id} className="px-5 py-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="font-semibold text-foreground">{r.name}</div>
-                        <div className="text-sm text-muted-foreground mt-0.5">
-                          Child: <span className="font-medium text-foreground">{r.child_name}</span>
-                        </div>
-                        <div className="text-sm text-muted-foreground tabular-nums mt-0.5">
-                          {r.phone}
-                        </div>
-                        <div className="text-sm text-muted-foreground mt-0.5">{r.area}</div>
+                    <div className="min-w-0">
+                      <div className="font-semibold text-foreground">{r.name}</div>
+                      <div className="text-sm text-muted-foreground mt-0.5">
+                        Child: <span className="font-medium text-foreground">{r.child_name}</span>
                       </div>
-                      <CardYesNo ok={r.card_generated} />
+                      <div className="text-sm text-muted-foreground tabular-nums mt-0.5">
+                        {r.phone}
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-0.5">{r.area}</div>
+                    </div>
+                    <div className="mt-2.5">
+                      <CardCell reg={r} />
                     </div>
                   </div>
                 ))}
@@ -467,7 +496,7 @@ function SessionDetail() {
                       <th className="text-left font-semibold px-5 py-3">Child</th>
                       <th className="text-left font-semibold px-5 py-3">Phone</th>
                       <th className="text-left font-semibold px-5 py-3">Neighbourhood</th>
-                      <th className="text-left font-semibold px-5 py-3">Card Generated</th>
+                      <th className="text-left font-semibold px-5 py-3">Card</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/60">
@@ -478,7 +507,7 @@ function SessionDetail() {
                         <td className="px-5 py-3 text-muted-foreground tabular-nums">{r.phone}</td>
                         <td className="px-5 py-3 text-muted-foreground">{r.area}</td>
                         <td className="px-5 py-3">
-                          <CardYesNo ok={r.card_generated} />
+                          <CardCell reg={r} />
                         </td>
                       </tr>
                     ))}
