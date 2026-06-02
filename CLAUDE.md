@@ -11,7 +11,7 @@ Mobile web app for MAD (Make A Difference NGO) India. Parents scan a QR code at 
 - **Frontend:** React + TypeScript + TanStack Router, Vite SPA
 - **Hosting:** Vercel Pro
 - **Database + Auth:** Supabase Pro (`etrlbxugodyvexzsyfdk.supabase.co`)
-- **Email:** Brevo SMTP (sender: akshay.chawda@makeadiff.in)
+- **Email:** Brevo SMTP (sender: technology@makeadiff.in)
 - **AI:** GPT-4o-mini (scene design + caption) → gpt-image-2 (watercolor illustration)
 - **Storage:** Supabase Storage bucket `dream-cards`
 
@@ -59,7 +59,7 @@ git push origin main  # triggers Vercel auto-deploy
 - `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` — client-side Supabase
 - `SUPABASE_SERVICE_ROLE_KEY` — server-side only (API functions)
 - `OPENAI_API_KEY` — gpt-4o-mini + gpt-image-2
-- `BREVO_SMTP_USER` + `BREVO_SMTP_PASS` — Brevo SMTP login + key, used by `api/notify-approval.ts` to send the approval email via the same Brevo relay as Supabase auth mail. Optional overrides: `BREVO_SMTP_HOST` (default `smtp-relay.brevo.com`), `BREVO_SMTP_PORT` (default `587`), `MAIL_FROM` (default `noreply@makeadiff.in`), `APP_URL`. (Replaces the old `BREVO_API_KEY` HTTP-API approach.)
+- `BREVO_SMTP_USER` + `BREVO_SMTP_PASS` — Brevo SMTP login + key, used by `api/notify-approval.ts` to send the approval email via the same Brevo relay as Supabase auth mail. Optional overrides: `BREVO_SMTP_HOST` (default `smtp-relay.brevo.com`), `BREVO_SMTP_PORT` (default `587`), `MAIL_FROM` (default `technology@makeadiff.in`), `APP_URL`. (Replaces the old `BREVO_API_KEY` HTTP-API approach.)
 
 ## Original What this is (kept for context)
 

@@ -19,7 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const smtpPort = Number(process.env.BREVO_SMTP_PORT ?? "587");
   const smtpUser = process.env.BREVO_SMTP_USER;
   const smtpPass = process.env.BREVO_SMTP_PASS;
-  const fromEmail = process.env.MAIL_FROM ?? "noreply@makeadiff.in";
+  const fromEmail = process.env.MAIL_FROM ?? "technology@makeadiff.in";
   const appUrl = process.env.APP_URL ?? "https://mad-care-camps.vercel.app";
 
   if (!supabaseUrl || !serviceKey || !smtpUser || !smtpPass) {
