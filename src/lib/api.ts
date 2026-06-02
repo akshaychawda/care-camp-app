@@ -264,8 +264,24 @@ export async function enableUser(id: string): Promise<void> {
 }
 
 export async function updateUserRole(id: string, role: UserRole): Promise<void> {
-  const { error } = await supabase.from("profiles").update({ role }).eq("id", id);
+  // .select() so we can confirm the write actually landed. Under RLS, an UPDATE
+  // that the policy filters out returns success with zero rows (silent no-op),
+  // which would otherwise look like it worked. Verify the returned row reflects
+  // the new role and surface a clear error if the database blocked it.
+  const { data, error } = await supabase
+    .from("profiles")
+    .update({ role })
+    .eq("id", id)
+    .select("id, role");
   if (error) throw error;
+  if (!data || data.length === 0) {
+    throw new Error(
+      "The database blocked this change (no row updated). A Supabase RLS policy on 'profiles' likely prevents setting this role.",
+    );
+  }
+  if (data[0].role !== role) {
+    throw new Error(`Role did not change — database returned '${data[0].role}'.`);
+  }
 }
 
 async function getAuthToken(): Promise<string | null> {

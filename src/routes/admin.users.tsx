@@ -477,8 +477,12 @@ function UsersPage() {
   };
 
   const handleRoleChange = async (id: string, role: UserRole) => {
-    try { await updateUserRole(id, role); toast.success("Role updated"); }
-    catch { toast.error("Something went wrong"); }
+    try {
+      await updateUserRole(id, role);
+      toast.success("Role updated");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Something went wrong");
+    }
     await load();
   };
 
