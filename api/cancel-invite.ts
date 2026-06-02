@@ -17,7 +17,10 @@ export default async function handler(req: Request): Promise<Response> {
   });
 
   const token = authHeader.replace("Bearer ", "");
-  const { data: { user }, error: authErr } = await admin.auth.getUser(token);
+  const {
+    data: { user },
+    error: authErr,
+  } = await admin.auth.getUser(token);
   if (authErr || !user) return json({ error: "Unauthorized" }, 401);
 
   const { data: callerProfile } = await admin

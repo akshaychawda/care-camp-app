@@ -205,7 +205,9 @@ export function PageGuide({ pageKey, role }: { pageKey: string; role: UserRole }
     setCollapsed((c) => {
       try {
         localStorage.setItem(storageKey, String(!c));
-      } catch {}
+      } catch {
+        // localStorage unavailable (private mode / blocked) — ignore, state still toggles
+      }
       return !c;
     });
   };

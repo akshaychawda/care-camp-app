@@ -25,7 +25,10 @@ export default async function handler(req: Request): Promise<Response> {
 
   // Verify the requesting user is super_admin
   const token = authHeader.replace("Bearer ", "");
-  const { data: { user }, error: authErr } = await admin.auth.getUser(token);
+  const {
+    data: { user },
+    error: authErr,
+  } = await admin.auth.getUser(token);
   if (authErr || !user) return json({ error: "Unauthorized" }, 401);
 
   const { data: callerProfile } = await admin
@@ -50,13 +53,16 @@ export default async function handler(req: Request): Promise<Response> {
 
   // Upsert profile so the invited user appears in the users list immediately
   if (inviteData?.user) {
-    await admin.from("profiles").upsert({
-      id: inviteData.user.id,
-      full_name: full_name ?? "",
-      email,
-      role: "mad_employee",
-      status: "invited",
-    }, { onConflict: "id" });
+    await admin.from("profiles").upsert(
+      {
+        id: inviteData.user.id,
+        full_name: full_name ?? "",
+        email,
+        role: "mad_employee",
+        status: "invited",
+      },
+      { onConflict: "id" },
+    );
   }
 
   return json({ success: true }, 200);

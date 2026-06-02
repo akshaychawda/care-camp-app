@@ -2,9 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Route as AdminRoute } from "@/routes/admin";
 import { Users, Sparkles, Tent, Clock, UserCheck, Radio, TrendingUp } from "lucide-react";
-import {
-  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
-} from "recharts";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import {
   getSessions,
   getCampOwners,
@@ -32,7 +30,9 @@ function TileLabel({ icon: Icon, children }: { icon: React.ElementType; children
   return (
     <div className="flex items-center gap-1.5 mb-3">
       <Icon className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
-      <span className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-widest">{children}</span>
+      <span className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-widest">
+        {children}
+      </span>
     </div>
   );
 }
@@ -75,7 +75,9 @@ function Overview() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const cities = useMemo(() => Array.from(new Set(sessions.map((s) => s.city))).sort(), [sessions]);
 
@@ -97,17 +99,23 @@ function Overview() {
   const avgDuration = useMemo(() => {
     const closed = filteredSessions.filter((s) => s.closed_at);
     if (closed.length === 0) return null;
-    const totalMs = closed.reduce((sum, s) =>
-      sum + (new Date(s.closed_at!).getTime() - new Date(s.created_at).getTime()), 0);
+    const totalMs = closed.reduce(
+      (sum, s) => sum + (new Date(s.closed_at!).getTime() - new Date(s.created_at).getTime()),
+      0,
+    );
     const avgMin = Math.round(totalMs / closed.length / 60000);
     const h = Math.floor(avgMin / 60);
     const m = avgMin % 60;
     return h > 0 ? (m > 0 ? `${h}h ${m}m` : `${h}h`) : `${avgMin}m`;
   }, [filteredSessions]);
 
-  const avgParentsPerCamp = closedCamps > 0
-    ? Math.round(filteredSessions.filter(s => !s.is_open).reduce((a, s) => a + s.parent_count, 0) / closedCamps)
-    : 0;
+  const avgParentsPerCamp =
+    closedCamps > 0
+      ? Math.round(
+          filteredSessions.filter((s) => !s.is_open).reduce((a, s) => a + s.parent_count, 0) /
+            closedCamps,
+        )
+      : 0;
 
   // When a city/owner filter is active, Reach must reflect it. We can derive
   // children/cards from session aggregates, but unique-parent dedup (by phone)
@@ -123,17 +131,15 @@ function Overview() {
     ? filteredSessions.reduce((a, s) => a + s.card_count, 0)
     : (parentStats?.cardsGenerated ?? 0);
 
-  const parentsCount = isFiltered
-    ? childrenCount
-    : (parentStats?.uniqueParents ?? 0);
+  const parentsCount = isFiltered ? childrenCount : (parentStats?.uniqueParents ?? 0);
 
-  const cardSuccessRate = childrenCount > 0
-    ? Math.round((cardsCount / childrenCount) * 100)
-    : 0;
+  const cardSuccessRate = childrenCount > 0 ? Math.round((cardsCount / childrenCount) * 100) : 0;
 
   const updatedLabel = updatedAt
     ? `↻ ${updatedAt.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}`
-    : loadError ? "Failed to load" : "Loading…";
+    : loadError
+      ? "Failed to load"
+      : "Loading…";
 
   return (
     <div className="px-5 md:px-10 py-6 md:py-10 w-full max-w-[1400px] mx-auto">
@@ -143,7 +149,14 @@ function Overview() {
       <div className="flex items-start justify-between gap-4 mb-5">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">Overview</h1>
-          <p className="text-xs text-muted-foreground/60 mt-1">{updatedLabel}{loadError && <button onClick={load} className="ml-2 text-primary underline">Retry</button>}</p>
+          <p className="text-xs text-muted-foreground/60 mt-1">
+            {updatedLabel}
+            {loadError && (
+              <button onClick={load} className="ml-2 text-primary underline">
+                Retry
+              </button>
+            )}
+          </p>
         </div>
         <div className="flex gap-2 shrink-0 flex-wrap justify-end">
           <select
@@ -152,7 +165,11 @@ function Overview() {
             className="h-8 px-3 rounded-lg border border-border bg-input text-xs font-medium text-foreground"
           >
             <option value="all">All cities</option>
-            {cities.map((c) => <option key={c} value={c}>{c}</option>)}
+            {cities.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
           </select>
           {owners.length > 0 && (
             <select
@@ -161,7 +178,11 @@ function Overview() {
               className="h-8 px-3 rounded-lg border border-border bg-input text-xs font-medium text-foreground"
             >
               <option value="all">All owners</option>
-              {owners.map((o) => <option key={o.id} value={o.id}>{o.full_name || o.id.slice(0, 8)}</option>)}
+              {owners.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.full_name || o.id.slice(0, 8)}
+                </option>
+              ))}
             </select>
           )}
         </div>
@@ -173,7 +194,10 @@ function Overview() {
           <p className="text-white text-sm font-semibold min-w-0">
             <span className="inline-block w-2 h-2 rounded-full bg-white mr-2 animate-pulse" />
             {liveCamps.length} camp{liveCamps.length > 1 ? "s" : ""} live now —{" "}
-            {liveCamps.slice(0, 3).map((c) => `${c.city} · ${c.area}`).join(", ")}
+            {liveCamps
+              .slice(0, 3)
+              .map((c) => `${c.city} · ${c.area}`)
+              .join(", ")}
             {liveCamps.length > 3 && ` +${liveCamps.length - 3} more`}
           </p>
           {liveCamps.length === 1 ? (
@@ -238,7 +262,8 @@ function Overview() {
           <div className="flex items-center gap-2.5 mt-2.5">
             {activeCamps > 0 && (
               <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">
-                <Radio className="h-2.5 w-2.5" />{activeCamps} live
+                <Radio className="h-2.5 w-2.5" />
+                {activeCamps} live
               </span>
             )}
             <span className="text-xs text-muted-foreground">{closedCamps} closed</span>

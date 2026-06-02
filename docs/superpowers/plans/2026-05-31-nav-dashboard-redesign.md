@@ -12,20 +12,21 @@
 
 ## File Map
 
-| File | Change |
-|------|--------|
-| `src/components/admin/AdminLayout.tsx` | Update NAV array — Overview + Camps + Users |
-| `src/components/admin/PageGuide.tsx` | Rename "dashboard"→"overview", add "camps" key |
-| `src/lib/api.ts` | Add `getParentStats`, `getRegistrationsByWeek`, `getLiveCamps`; normalize area on save |
-| `src/routes/admin.index.tsx` | Full rewrite — Overview analytics page |
-| `src/routes/admin.camps.tsx` | New file — Camps browser page |
-| `src/lib/admin-data.ts` | Delete — legacy mock data, no longer used |
+| File                                   | Change                                                                                 |
+| -------------------------------------- | -------------------------------------------------------------------------------------- |
+| `src/components/admin/AdminLayout.tsx` | Update NAV array — Overview + Camps + Users                                            |
+| `src/components/admin/PageGuide.tsx`   | Rename "dashboard"→"overview", add "camps" key                                         |
+| `src/lib/api.ts`                       | Add `getParentStats`, `getRegistrationsByWeek`, `getLiveCamps`; normalize area on save |
+| `src/routes/admin.index.tsx`           | Full rewrite — Overview analytics page                                                 |
+| `src/routes/admin.camps.tsx`           | New file — Camps browser page                                                          |
+| `src/lib/admin-data.ts`                | Delete — legacy mock data, no longer used                                              |
 
 ---
 
 ### Task 1: Update AdminLayout NAV and sidebar
 
 **Files:**
+
 - Modify: `src/components/admin/AdminLayout.tsx`
 
 - [ ] **Step 1: Update NAV constant and imports**
@@ -52,6 +53,7 @@ const NAV = [
 - [ ] **Step 2: Remove the `canCreateCamp` filter from nav**
 
 Find the nav filter block:
+
 ```typescript
 const nav = NAV.filter((item) => {
   if (item.to === "/admin/users") return canSeeUsers;
@@ -61,6 +63,7 @@ const nav = NAV.filter((item) => {
 ```
 
 Replace with:
+
 ```typescript
 const nav = NAV.filter((item) => {
   if (item.to === "/admin/users") return canSeeUsers;
@@ -69,6 +72,7 @@ const nav = NAV.filter((item) => {
 ```
 
 Also remove the `canCreateCamp` variable declaration:
+
 ```typescript
 // DELETE this line:
 const canCreateCamp = profile?.role !== "cho";
@@ -93,6 +97,7 @@ cd ~/Projects/care-camp-app && git add src/components/admin/AdminLayout.tsx && g
 ### Task 2: Update PageGuide keys
 
 **Files:**
+
 - Modify: `src/components/admin/PageGuide.tsx`
 
 - [ ] **Step 1: Rename "dashboard" key to "overview" and add "camps" key**
@@ -139,11 +144,13 @@ In `src/components/admin/PageGuide.tsx`, rename the `dashboard:` key to `overvie
 - [ ] **Step 2: Update the "dashboard" reference in admin.index.tsx**
 
 In `src/routes/admin.index.tsx`, find:
+
 ```typescript
 <PageGuide pageKey="dashboard" role={profile?.role ?? "cho"} />
 ```
 
 Change to:
+
 ```typescript
 <PageGuide pageKey="overview" role={profile?.role ?? "cho"} />
 ```
@@ -165,16 +172,19 @@ cd ~/Projects/care-camp-app && git add src/components/admin/PageGuide.tsx src/ro
 ### Task 3: Add new API functions + area normalization
 
 **Files:**
+
 - Modify: `src/lib/api.ts`
 
 - [ ] **Step 1: Add area normalization in `registerParentAndChild`**
 
 Find the area field in the insert inside `registerParentAndChild`:
+
 ```typescript
 area: params.area,
 ```
 
 Replace with:
+
 ```typescript
 area: params.area.trim().replace(/\b\w/g, (c) => c.toUpperCase()),
 ```
@@ -213,7 +223,9 @@ export async function getParentStats(): Promise<ParentStats> {
 - [ ] **Step 3: Add `getRegistrationsByWeek` function**
 
 ```typescript
-export async function getRegistrationsByWeek(weeks = 12): Promise<{ week: string; count: number }[]> {
+export async function getRegistrationsByWeek(
+  weeks = 12,
+): Promise<{ week: string; count: number }[]> {
   const since = new Date();
   since.setDate(since.getDate() - weeks * 7);
   const { data, error } = await supabase
@@ -277,6 +289,7 @@ cd ~/Projects/care-camp-app && git add src/lib/api.ts && git commit -m "feat(api
 ### Task 4: Create admin.camps.tsx (new Camps browser page)
 
 **Files:**
+
 - Create: `src/routes/admin.camps.tsx`
 
 - [ ] **Step 1: Create the file**
@@ -522,6 +535,7 @@ cd ~/Projects/care-camp-app && git add src/routes/admin.camps.tsx && git commit 
 ### Task 5: Rewrite admin.index.tsx as Overview analytics page
 
 **Files:**
+
 - Modify: `src/routes/admin.index.tsx`
 
 - [ ] **Step 1: Replace the entire file**
@@ -895,6 +909,7 @@ cd ~/Projects/care-camp-app && git add src/routes/admin.index.tsx && git commit 
 ### Task 6: Delete legacy admin-data.ts
 
 **Files:**
+
 - Delete: `src/lib/admin-data.ts`
 
 - [ ] **Step 1: Check nothing imports admin-data.ts**
@@ -934,6 +949,7 @@ Expected: all commits pushed, Vercel deploy triggered.
 - [ ] **Step 1: Confirm Vercel deploy completes**
 
 Wait ~2 minutes then open `https://mad-care-camps.vercel.app/admin` and verify:
+
 - Overview page shows stat tiles and charts (or "0" states if no data yet)
 - Sidebar shows Overview · Camps · Users
 - Clicking Camps → `/admin/camps` shows camp list

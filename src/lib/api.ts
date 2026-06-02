@@ -129,8 +129,14 @@ export async function registerParentAndChild(params: {
     question_index: i,
     answer,
   }));
+  // Non-fatal: child_answers is a write-only analytics table that nothing in the
+  // app reads back, and the dream card is generated from in-memory data — not from
+  // these rows. So a failure here (e.g. an RLS gap on the anon key) must NOT block
+  // the parent's card on camp day. Log it and continue.
   const { error: ansError } = await supabase.from("child_answers").insert(answers);
-  if (ansError) throw ansError;
+  if (ansError) {
+    console.error("child_answers insert failed (non-fatal):", ansError);
+  }
 
   return reg;
 }
@@ -181,7 +187,9 @@ export async function getParentStats(): Promise<ParentStats> {
   };
 }
 
-export async function getRegistrationsByWeek(weeks = 12): Promise<{ week: string; count: number }[]> {
+export async function getRegistrationsByWeek(
+  weeks = 12,
+): Promise<{ week: string; count: number }[]> {
   const since = new Date();
   since.setDate(since.getDate() - weeks * 7);
   const { data, error } = await supabase
@@ -241,10 +249,7 @@ export async function getPendingCount(): Promise<number> {
 }
 
 export async function approveUser(id: string, role: UserRole): Promise<void> {
-  const { error } = await supabase
-    .from("profiles")
-    .update({ status: "active", role })
-    .eq("id", id);
+  const { error } = await supabase.from("profiles").update({ status: "active", role }).eq("id", id);
   if (error) throw error;
 }
 
@@ -285,7 +290,9 @@ export async function updateUserRole(id: string, role: UserRole): Promise<void> 
 }
 
 async function getAuthToken(): Promise<string | null> {
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
   return session?.access_token ?? null;
 }
 
@@ -337,8 +344,9 @@ export async function getCampCollaborators(campId: string): Promise<Collaborator
   if (error) throw error;
   return (data ?? []).map((d) => ({
     user_id: d.user_id,
-    full_name: (d.profiles as { full_name: string; role: UserRole } | null)?.full_name ?? "",
-    role: (d.profiles as { full_name: string; role: UserRole } | null)?.role ?? "cho",
+    full_name:
+      (d.profiles as unknown as { full_name: string; role: UserRole } | null)?.full_name ?? "",
+    role: (d.profiles as unknown as { full_name: string; role: UserRole } | null)?.role ?? "cho",
   }));
 }
 
@@ -393,7 +401,12 @@ export async function getRegistrationTimeline(filters: {
   if (error) throw error;
 
   const filtered = (data ?? []).filter((r) => {
-    const s = r.camp_sessions as { city: string; area: string; is_open: boolean; created_by: string };
+    const s = r.camp_sessions as unknown as {
+      city: string;
+      area: string;
+      is_open: boolean;
+      created_by: string;
+    };
     if (filters.city && s.city !== filters.city) return false;
     if (filters.area && s.area !== filters.area) return false;
     if (filters.isOpen !== undefined && s.is_open !== filters.isOpen) return false;

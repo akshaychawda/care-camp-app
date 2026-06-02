@@ -54,9 +54,7 @@ export function AdminLayout() {
 
         <nav className="flex-1 p-2 lg:p-3 space-y-1">
           {nav.map((item) => {
-            const active = item.exact
-              ? pathname === item.to
-              : pathname.startsWith(item.to);
+            const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
             const badge = item.to === "/admin/users" && pendingCount > 0 ? pendingCount : 0;
             return (
               <Link
@@ -116,13 +114,13 @@ export function AdminLayout() {
       </main>
 
       {/* Mobile bottom nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-sidebar text-sidebar-foreground border-t border-sidebar-border z-50"
-        style={{ gridTemplateColumns: `repeat(${nav.length}, 1fr)` }}>
+      <nav
+        className="md:hidden fixed bottom-0 left-0 right-0 bg-sidebar text-sidebar-foreground border-t border-sidebar-border z-50"
+        style={{ gridTemplateColumns: `repeat(${nav.length}, 1fr)` }}
+      >
         <div className={`grid`} style={{ gridTemplateColumns: `repeat(${nav.length}, 1fr)` }}>
           {nav.map((item) => {
-            const active = item.exact
-              ? pathname === item.to
-              : pathname.startsWith(item.to);
+            const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
             const badge = item.to === "/admin/users" && pendingCount > 0 ? pendingCount : 0;
             return (
               <Link

@@ -1,7 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle2, XCircle, Copy, Check, UserPlus, X, RefreshCw, Radio } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  XCircle,
+  Copy,
+  Check,
+  UserPlus,
+  X,
+  RefreshCw,
+  Radio,
+} from "lucide-react";
 import { PageGuide } from "@/components/admin/PageGuide";
 import QRCode from "qrcode";
 import {
@@ -66,8 +76,12 @@ function SharePanel({ campId }: { campId: string }) {
   const [removing, setRemoving] = useState<string | null>(null);
 
   useEffect(() => {
-    getCampCollaborators(campId).then(setCollaborators).catch(() => {});
-    getShareableUsers().then(setUsers).catch(() => {});
+    getCampCollaborators(campId)
+      .then(setCollaborators)
+      .catch(() => {});
+    getShareableUsers()
+      .then(setUsers)
+      .catch(() => {});
   }, [campId]);
 
   const collaboratorIds = new Set(collaborators.map((c) => c.user_id));
@@ -79,7 +93,11 @@ function SharePanel({ campId }: { campId: string }) {
     try {
       await addCampCollaborator(campId, selectedUserId);
       const added = users.find((u) => u.id === selectedUserId);
-      if (added) setCollaborators((prev) => [...prev, { user_id: added.id, full_name: added.full_name, role: added.role }]);
+      if (added)
+        setCollaborators((prev) => [
+          ...prev,
+          { user_id: added.id, full_name: added.full_name, role: added.role },
+        ]);
       setSelectedUserId("");
       toast.success("Access granted");
     } catch {
@@ -115,7 +133,9 @@ function SharePanel({ campId }: { campId: string }) {
           {collaborators.map((c) => (
             <li key={c.user_id} className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <div className="text-sm font-medium text-foreground truncate">{c.full_name || "Unnamed"}</div>
+                <div className="text-sm font-medium text-foreground truncate">
+                  {c.full_name || "Unnamed"}
+                </div>
                 <div className="text-xs text-muted-foreground">{ROLE_LABEL[c.role] ?? c.role}</div>
               </div>
               <button

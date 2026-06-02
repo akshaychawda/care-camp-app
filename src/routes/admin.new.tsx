@@ -16,9 +16,26 @@ export const Route = createFileRoute("/admin/new")({
 });
 
 const CITIES = [
-  "Ahmedabad", "Bengaluru", "Chandigarh", "Chennai", "Cochin", "Coimbatore",
-  "Delhi", "Dehradun", "Goa", "Guntur", "Gwalior", "Hyderabad", "Kolkata",
-  "Lucknow", "Mumbai", "Mysore", "Nagpur", "Pune", "Trivandrum", "Vijayawada",
+  "Ahmedabad",
+  "Bengaluru",
+  "Chandigarh",
+  "Chennai",
+  "Cochin",
+  "Coimbatore",
+  "Delhi",
+  "Dehradun",
+  "Goa",
+  "Guntur",
+  "Gwalior",
+  "Hyderabad",
+  "Kolkata",
+  "Lucknow",
+  "Mumbai",
+  "Mysore",
+  "Nagpur",
+  "Pune",
+  "Trivandrum",
+  "Vijayawada",
 ];
 
 function NewCamp() {

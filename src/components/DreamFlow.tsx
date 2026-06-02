@@ -209,7 +209,9 @@ function PhoneField({ value, onChange }: { value: string; onChange: (v: string) 
         onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 10))}
         placeholder="10-digit mobile number"
         className={`w-full h-14 px-4 rounded-2xl bg-input border-2 outline-none text-lg transition placeholder:text-muted-foreground/60 ${
-          invalid ? "border-destructive focus:border-destructive" : "border-transparent focus:border-primary focus:bg-card"
+          invalid
+            ? "border-destructive focus:border-destructive"
+            : "border-transparent focus:border-primary focus:bg-card"
         }`}
       />
       {invalid && (
@@ -317,12 +319,15 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
       });
   }, [sessionId]);
 
-
   const update = <K extends keyof FormData>(k: K, v: FormData[K]) =>
     setData((d) => ({ ...d, [k]: v }));
 
   const showBack =
-    step !== "checking" && step !== "welcome" && step !== "loading" && step !== "no-session" && step !== "camp-closed";
+    step !== "checking" &&
+    step !== "welcome" &&
+    step !== "loading" &&
+    step !== "no-session" &&
+    step !== "camp-closed";
   const qIndex = step.startsWith("q") ? Number(step.slice(1)) : 0;
   const progress = qIndex ? { current: qIndex, total: 5 } : undefined;
 
@@ -352,13 +357,12 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
               placeholder="Your name"
               autoFocus
             />
-            <PhoneField
-              value={data.phone}
-              onChange={(v) => update("phone", v)}
-            />
+            <PhoneField value={data.phone} onChange={(v) => update("phone", v)} />
             {sessionCity ? (
               <div>
-                <span className="block text-sm font-semibold text-foreground/80 mb-2 px-1">City</span>
+                <span className="block text-sm font-semibold text-foreground/80 mb-2 px-1">
+                  City
+                </span>
                 <div className="w-full h-14 px-4 rounded-2xl bg-secondary border-2 border-transparent text-lg flex items-center text-foreground/70">
                   {sessionCity}
                 </div>
@@ -631,16 +635,8 @@ function Question({
   );
 }
 
-const LOADING_MESSAGES = [
-  "We're painting",
-  "Adding finishing touches to",
-  "Almost ready —",
-];
-const LOADING_SUFFIXES = [
-  "'s dream…",
-  "'s dream card…",
-  "'s masterpiece…",
-];
+const LOADING_MESSAGES = ["We're painting", "Adding finishing touches to", "Almost ready —"];
+const LOADING_SUFFIXES = ["'s dream…", "'s dream card…", "'s masterpiece…"];
 
 function Loading({ childName }: { childName: string }) {
   const [msgIdx, setMsgIdx] = useState(0);
@@ -661,14 +657,21 @@ function Loading({ childName }: { childName: string }) {
         </div>
       </div>
       <h2 className="text-3xl font-bold leading-tight max-w-[320px]">
-        {LOADING_MESSAGES[msgIdx]} <span className="text-primary">{childName}</span>{LOADING_SUFFIXES[msgIdx]}
+        {LOADING_MESSAGES[msgIdx]} <span className="text-primary">{childName}</span>
+        {LOADING_SUFFIXES[msgIdx]}
       </h2>
       <p className="mt-4 text-base text-muted-foreground">This will just take a moment ✨</p>
     </div>
   );
 }
 
-function CopyLinkButton({ registrationId, childName }: { registrationId: string; childName: string }) {
+function CopyLinkButton({
+  registrationId,
+  childName,
+}: {
+  registrationId: string;
+  childName: string;
+}) {
   const [copied, setCopied] = useState(false);
   const url = `${window.location.origin}/card/${registrationId}`;
   const copy = () => {
@@ -781,7 +784,17 @@ function Reveal({
   );
 }
 
-function NextChild({ childName, imageUrl, registrationId, onNext }: { childName: string; imageUrl: string | null; registrationId: string | null; onNext: () => void }) {
+function NextChild({
+  childName,
+  imageUrl,
+  registrationId,
+  onNext,
+}: {
+  childName: string;
+  imageUrl: string | null;
+  registrationId: string | null;
+  onNext: () => void;
+}) {
   const handleDownload = async () => {
     if (!imageUrl) return;
     try {

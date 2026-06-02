@@ -38,6 +38,7 @@ Pill buttons: **All roles · MAD Employee · CO `n` · CHO `n`**
 ### Result Summary Line
 
 Below both filter rows:
+
 > Showing **X users** · [status label] · [role label]
 
 Uses muted text. Updates reactively.
@@ -67,13 +68,13 @@ Within each group: alphabetical by `full_name`.
 
 ### Actions by Status
 
-| Status | Actions |
-|--------|---------|
-| Pending | "Assign role…" dropdown (blank default, required to unlock Approve) + Approve button + Reject button |
-| Invited | Resend button + Cancel button |
-| Active | Change role button (opens inline dropdown) + Disable button |
-| Disabled | Enable button |
-| Rejected | Reinvite button |
+| Status   | Actions                                                                                              |
+| -------- | ---------------------------------------------------------------------------------------------------- |
+| Pending  | "Assign role…" dropdown (blank default, required to unlock Approve) + Approve button + Reject button |
+| Invited  | Resend button + Cancel button                                                                        |
+| Active   | Change role button (opens inline dropdown) + Disable button                                          |
+| Disabled | Enable button                                                                                        |
+| Rejected | Reinvite button                                                                                      |
 
 Approve button is disabled until a role is selected from the dropdown. Approve button fires `approveUser(id, role)`. All actions show a loading spinner while in-flight and toast on success/failure.
 

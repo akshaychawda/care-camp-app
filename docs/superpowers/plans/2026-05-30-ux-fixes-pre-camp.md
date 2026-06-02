@@ -12,19 +12,20 @@
 
 ## File Map
 
-| File | Tasks |
-|------|-------|
-| `src/routes/admin.new.tsx` | Task 1 |
-| `src/routes/admin.index.tsx` | Tasks 2, 3, 4 |
-| `src/routes/admin.sessions.$sessionId.tsx` | Tasks 5, 6 |
-| `src/lib/api.ts` | Task 7 |
-| `src/components/DreamFlow.tsx` | Tasks 7, 8, 9, 10 |
+| File                                       | Tasks             |
+| ------------------------------------------ | ----------------- |
+| `src/routes/admin.new.tsx`                 | Task 1            |
+| `src/routes/admin.index.tsx`               | Tasks 2, 3, 4     |
+| `src/routes/admin.sessions.$sessionId.tsx` | Tasks 5, 6        |
+| `src/lib/api.ts`                           | Task 7            |
+| `src/components/DreamFlow.tsx`             | Tasks 7, 8, 9, 10 |
 
 ---
 
 ## Task 1: A8 — Fix date display bug on new camp confirmation
 
 **Files:**
+
 - Modify: `src/routes/admin.new.tsx` (line 198)
 
 The `Confirmation` component uses `new Date(data.session.date)` which interprets the ISO date string as UTC, causing June 6 to display as June 5 in IST. The same bug was fixed in `admin.index.tsx` and `admin.sessions.$sessionId.tsx` in the previous session.
@@ -32,15 +33,19 @@ The `Confirmation` component uses `new Date(data.session.date)` which interprets
 - [ ] **Step 1: Apply the fix**
 
 In `src/routes/admin.new.tsx`, find line 198:
+
 ```tsx
 {new Date(data.session.date).toLocaleDateString("en-IN", {
 ```
+
 Change to:
+
 ```tsx
 {new Date(data.session.date + "T00:00:00").toLocaleDateString("en-IN", {
 ```
 
 Also apply the same fix to the `share` function in the same file at line 176:
+
 ```tsx
 // Before:
 ${new Date(data.session.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
@@ -53,6 +58,7 @@ ${new Date(data.session.date + "T00:00:00").toLocaleDateString("en-IN", { day: "
 ```bash
 cd ~/Projects/care-camp-app && npm run build
 ```
+
 Expected: `✓ built in Xs` with no errors.
 
 - [ ] **Step 3: Commit**
@@ -66,6 +72,7 @@ cd ~/Projects/care-camp-app && git add src/routes/admin.new.tsx && git commit -m
 ## Task 2: C1 — CHO-aware empty state on dashboard
 
 **Files:**
+
 - Modify: `src/routes/admin.index.tsx` (lines 148–153)
 
 A CHO with no assigned camps sees "No camps yet. Create one to get started." — but CHOs cannot create camps.
@@ -73,18 +80,25 @@ A CHO with no assigned camps sees "No camps yet. Create one to get started." —
 - [ ] **Step 1: Update the empty state**
 
 In `src/routes/admin.index.tsx`, find the empty state block (currently around line 149):
+
 ```tsx
-{sessions.length === 0
-  ? "No camps yet. Create one to get started."
-  : "No camps match these filters."}
+{
+  sessions.length === 0
+    ? "No camps yet. Create one to get started."
+    : "No camps match these filters.";
+}
 ```
+
 Replace with:
+
 ```tsx
-{sessions.length === 0
-  ? profile?.role === "cho"
-    ? "No camps have been shared with you yet. Ask your CO to share a camp with you."
-    : "No camps yet. Create one to get started."
-  : "No camps match these filters."}
+{
+  sessions.length === 0
+    ? profile?.role === "cho"
+      ? "No camps have been shared with you yet. Ask your CO to share a camp with you."
+      : "No camps yet. Create one to get started."
+    : "No camps match these filters.";
+}
 ```
 
 - [ ] **Step 2: Build check**
@@ -92,6 +106,7 @@ Replace with:
 ```bash
 cd ~/Projects/care-camp-app && npm run build
 ```
+
 Expected: `✓ built in Xs` with no errors.
 
 - [ ] **Step 3: Commit**
@@ -105,6 +120,7 @@ cd ~/Projects/care-camp-app && git add src/routes/admin.index.tsx && git commit 
 ## Task 3: A4 — Stats tiles reflect current filter
 
 **Files:**
+
 - Modify: `src/routes/admin.index.tsx` (lines 60–80)
 
 The `totals` memo uses `sessions` (all sessions) as its source. When the city/chapter filter is active, the stat tiles must show the filtered totals. The fix: move `filtered` before `totals` and memoize it, then compute `totals` from `filtered`.
@@ -114,31 +130,31 @@ The `totals` memo uses `sessions` (all sessions) as its source. When the city/ch
 In `src/routes/admin.index.tsx`, replace the block from `const totals` through `const filtered` (lines 60–80):
 
 ```tsx
-  const cities = useMemo(() => Array.from(new Set(sessions.map((s) => s.city))).sort(), [sessions]);
-  const chapters = useMemo(
-    () =>
-      Array.from(
-        new Set(sessions.filter((s) => city === "all" || s.city === city).map((s) => s.chapter)),
-      ).sort(),
-    [city, sessions],
-  );
+const cities = useMemo(() => Array.from(new Set(sessions.map((s) => s.city))).sort(), [sessions]);
+const chapters = useMemo(
+  () =>
+    Array.from(
+      new Set(sessions.filter((s) => city === "all" || s.city === city).map((s) => s.chapter)),
+    ).sort(),
+  [city, sessions],
+);
 
-  const filtered = useMemo(
-    () =>
-      sessions.filter(
-        (s) => (city === "all" || s.city === city) && (chapter === "all" || s.chapter === chapter),
-      ),
-    [sessions, city, chapter],
-  );
+const filtered = useMemo(
+  () =>
+    sessions.filter(
+      (s) => (city === "all" || s.city === city) && (chapter === "all" || s.chapter === chapter),
+    ),
+  [sessions, city, chapter],
+);
 
-  const totals = useMemo(
-    () => ({
-      camps: filtered.length,
-      parents: filtered.reduce((a, s) => a + s.parent_count, 0),
-      cards: filtered.reduce((a, s) => a + s.card_count, 0),
-    }),
-    [filtered],
-  );
+const totals = useMemo(
+  () => ({
+    camps: filtered.length,
+    parents: filtered.reduce((a, s) => a + s.parent_count, 0),
+    cards: filtered.reduce((a, s) => a + s.card_count, 0),
+  }),
+  [filtered],
+);
 ```
 
 Note: the original order was `totals` → `cities` → `chapters` → `filtered`. The new order is `cities` → `chapters` → `filtered` → `totals`.
@@ -148,6 +164,7 @@ Note: the original order was `totals` → `cities` → `chapters` → `filtered`
 ```bash
 cd ~/Projects/care-camp-app && npm run build
 ```
+
 Expected: `✓ built in Xs` with no errors.
 
 - [ ] **Step 3: Browser verify**
@@ -165,6 +182,7 @@ cd ~/Projects/care-camp-app && git add src/routes/admin.index.tsx && git commit 
 ## Task 4: A5 — Open/closed badge on camp list
 
 **Files:**
+
 - Modify: `src/routes/admin.index.tsx` (mobile card ~line 166, desktop table ~line 210)
 
 `CampSession` already has `is_open: boolean`. Need to surface it visually in both the mobile card view and the desktop table.
@@ -195,18 +213,18 @@ In `src/routes/admin.index.tsx`, in the mobile card block, find the `<Tag>` date
 - [ ] **Step 2: Add column to desktop table**
 
 In the desktop `<thead>`, add a Status column between Chapter and Date:
+
 ```tsx
 <th className="text-left font-semibold px-5 py-3">Status</th>
 ```
 
 In each desktop `<tr>`, add the matching `<td>` after the Chapter cell:
+
 ```tsx
 <td className="px-5 py-3">
   <span
     className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${
-      s.is_open
-        ? "bg-emerald-500/15 text-emerald-400"
-        : "bg-secondary text-muted-foreground"
+      s.is_open ? "bg-emerald-500/15 text-emerald-400" : "bg-secondary text-muted-foreground"
     }`}
   >
     {s.is_open ? "● Open" : "Closed"}
@@ -217,10 +235,13 @@ In each desktop `<tr>`, add the matching `<td>` after the Chapter cell:
 Also, while in the desktop table, remove the redundant standalone `City` column (the Camp column already shows `city — chapter`). Remove the `<th>City</th>` and its corresponding `<td>` from the `<tr>`:
 
 Remove this `<th>`:
+
 ```tsx
 <th className="text-left font-semibold px-5 py-3">City</th>
 ```
+
 Remove this `<td>`:
+
 ```tsx
 <td className="px-5 py-3 text-muted-foreground">
   <span className="inline-flex items-center gap-1">
@@ -237,6 +258,7 @@ Also remove the now-unused `MapPin` import if it's only used there.
 ```bash
 cd ~/Projects/care-camp-app && npm run build
 ```
+
 Expected: `✓ built in Xs` with no errors.
 
 - [ ] **Step 4: Commit**
@@ -250,6 +272,7 @@ cd ~/Projects/care-camp-app && git add src/routes/admin.index.tsx && git commit 
 ## Task 5: A13 — Refresh button and auto-refresh on registrations
 
 **Files:**
+
 - Modify: `src/routes/admin.sessions.$sessionId.tsx`
 
 The registrations list loads once and never updates. Fix: add a visible refresh button header + auto-refresh every 30s when the camp is open.
@@ -271,18 +294,27 @@ const loadRegistrations = async () => {
 - [ ] **Step 2: Add RefreshCw import and refresh button**
 
 Add `RefreshCw` to the lucide import line at the top of the file:
+
 ```tsx
-import { ArrowLeft, CheckCircle2, XCircle, Copy, Check, UserPlus, X, RefreshCw } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  XCircle,
+  Copy,
+  Check,
+  UserPlus,
+  X,
+  RefreshCw,
+} from "lucide-react";
 ```
 
 In the registrations `<section>`, update the header to include a refresh button:
+
 ```tsx
 <div className="px-5 py-4 border-b border-border flex items-center justify-between">
   <div>
     <h2 className="font-semibold text-foreground">Registrations</h2>
-    <p className="text-xs text-muted-foreground mt-0.5">
-      {registrations.length} registered
-    </p>
+    <p className="text-xs text-muted-foreground mt-0.5">{registrations.length} registered</p>
   </div>
   <button
     onClick={loadRegistrations}
@@ -311,6 +343,7 @@ useEffect(() => {
 ```bash
 cd ~/Projects/care-camp-app && npm run build
 ```
+
 Expected: `✓ built in Xs` with no errors.
 
 - [ ] **Step 5: Commit**
@@ -324,6 +357,7 @@ cd ~/Projects/care-camp-app && git add src/routes/admin.sessions.\$sessionId.tsx
 ## Task 6: C3 — Fullscreen QR mode for CHO camp day
 
 **Files:**
+
 - Modify: `src/routes/admin.sessions.$sessionId.tsx`
 
 The QR on the camp detail page is 160px. CHOs showing it to parents during a camp need a fullscreen version. Add a "Show to parent" button that opens a fixed fullscreen overlay with only the large QR code (tap anywhere to dismiss).
@@ -405,6 +439,7 @@ function CampQR({ sessionId }: { sessionId: string }) {
 ```bash
 cd ~/Projects/care-camp-app && npm run build
 ```
+
 Expected: `✓ built in Xs` with no errors.
 
 - [ ] **Step 3: Browser verify**
@@ -422,6 +457,7 @@ cd ~/Projects/care-camp-app && git add src/routes/admin.sessions.\$sessionId.tsx
 ## Task 7: D1 + D3 — Invalid session error + city pre-fill
 
 **Files:**
+
 - Modify: `src/lib/api.ts` (getCampStatus)
 - Modify: `src/components/DreamFlow.tsx` (useEffect + parent form)
 
@@ -484,6 +520,7 @@ useEffect(() => {
 When sessionCity is known, pre-populate `data.city` on the parent step. The cleanest place is where the "checking" step resolves to "welcome" — in the same `.then()` handler above, add a city pre-fill:
 
 Update the `.then()` handler:
+
 ```tsx
 .then(({ is_open, city }) => {
   setSessionCity(city);
@@ -499,40 +536,41 @@ Update the `.then()` handler:
 In the `"parent"` step JSX, replace the `<Field label="City" ...>` with a conditional: show a locked read-only display when sessionCity is set, or the regular editable field otherwise.
 
 Find the parent step City field:
+
 ```tsx
-<Field
-  label="City"
-  value={data.city}
-  onChange={(v) => update("city", v)}
-  placeholder="e.g. Pune"
-/>
+<Field label="City" value={data.city} onChange={(v) => update("city", v)} placeholder="e.g. Pune" />
 ```
 
 Replace with:
+
 ```tsx
-{sessionCity ? (
-  <div>
-    <span className="block text-sm font-semibold text-foreground/80 mb-2 px-1">City</span>
-    <div className="w-full h-14 px-4 rounded-2xl bg-secondary border-2 border-transparent text-lg flex items-center text-foreground/70">
-      {sessionCity}
+{
+  sessionCity ? (
+    <div>
+      <span className="block text-sm font-semibold text-foreground/80 mb-2 px-1">City</span>
+      <div className="w-full h-14 px-4 rounded-2xl bg-secondary border-2 border-transparent text-lg flex items-center text-foreground/70">
+        {sessionCity}
+      </div>
     </div>
-  </div>
-) : (
-  <Field
-    label="City"
-    value={data.city}
-    onChange={(v) => update("city", v)}
-    placeholder="e.g. Pune"
-  />
-)}
+  ) : (
+    <Field
+      label="City"
+      value={data.city}
+      onChange={(v) => update("city", v)}
+      placeholder="e.g. Pune"
+    />
+  );
+}
 ```
 
 - [ ] **Step 6: Update canContinue to not require city when pre-filled**
 
 The parent step's `canContinue` already checks `data.city`:
+
 ```tsx
 canContinue={!!(data.parentName && /^[6-9]\d{9}$/.test(data.phone) && data.area)}
 ```
+
 City was already removed from this check in the previous session (only name, phone, area). Verify this is still the case — if city was still in the check, it can be removed since it's now always pre-filled.
 
 - [ ] **Step 7: Build check**
@@ -540,6 +578,7 @@ City was already removed from this check in the previous session (only name, pho
 ```bash
 cd ~/Projects/care-camp-app && npm run build
 ```
+
 Expected: `✓ built in Xs` with no errors.
 
 - [ ] **Step 8: Commit**
@@ -553,6 +592,7 @@ cd ~/Projects/care-camp-app && git add src/lib/api.ts src/components/DreamFlow.t
 ## Task 8: D4 — Retain parent info for second child
 
 **Files:**
+
 - Modify: `src/components/DreamFlow.tsx` (NextChild onNext handler)
 
 When a parent has two children, "Next Child" currently resets ALL fields including parent name, phone, city, area. Fix: preserve parent fields, clear only child-specific fields, and navigate directly to the child step (skipping the parent form re-entry).
@@ -562,42 +602,47 @@ When a parent has two children, "Next Child" currently resets ALL fields includi
 In `src/components/DreamFlow.tsx`, find the `{step === "next" && <NextChild ...>}` block:
 
 ```tsx
-{step === "next" && (
-  <NextChild
-    childName={data.childName || "Your child"}
-    onNext={() => {
-      setData({ ...EMPTY });
-      setImageUrl(null);
-      setCaption(null);
-      setSaveError(null);
-      go("parent");
-    }}
-  />
-)}
+{
+  step === "next" && (
+    <NextChild
+      childName={data.childName || "Your child"}
+      onNext={() => {
+        setData({ ...EMPTY });
+        setImageUrl(null);
+        setCaption(null);
+        setSaveError(null);
+        go("parent");
+      }}
+    />
+  );
+}
 ```
 
 Replace with:
+
 ```tsx
-{step === "next" && (
-  <NextChild
-    childName={data.childName || "Your child"}
-    imageUrl={imageUrl}
-    onNext={() => {
-      setData((prev) => ({
-        ...EMPTY,
-        parentName: prev.parentName,
-        phone: prev.phone,
-        city: prev.city,
-        area: prev.area,
-      }));
-      setImageUrl(null);
-      setCaption(null);
-      setImageGenFailed(false);
-      setSaveError(null);
-      go("child");
-    }}
-  />
-)}
+{
+  step === "next" && (
+    <NextChild
+      childName={data.childName || "Your child"}
+      imageUrl={imageUrl}
+      onNext={() => {
+        setData((prev) => ({
+          ...EMPTY,
+          parentName: prev.parentName,
+          phone: prev.phone,
+          city: prev.city,
+          area: prev.area,
+        }));
+        setImageUrl(null);
+        setCaption(null);
+        setImageGenFailed(false);
+        setSaveError(null);
+        go("child");
+      }}
+    />
+  );
+}
 ```
 
 Note: `imageGenFailed` is added in Task 9 — add the `setImageGenFailed(false)` line in Task 9's pass, not here. For now, omit it.
@@ -617,6 +662,7 @@ The `imageUrl` prop isn't used yet — it will be wired in Task 10.
 ```bash
 cd ~/Projects/care-camp-app && npm run build
 ```
+
 Expected: `✓ built in Xs` with no errors.
 
 - [ ] **Step 4: Browser verify (manual)**
@@ -634,6 +680,7 @@ cd ~/Projects/care-camp-app && git add src/components/DreamFlow.tsx && git commi
 ## Task 9: D6 — Honest fallback when image generation fails
 
 **Files:**
+
 - Modify: `src/components/DreamFlow.tsx`
 
 When `generateDreamCard` returns `{ imageUrl: null }`, the reveal screen silently shows a generic placeholder image. The parent thinks it's their personalised card. Fix: track whether generation failed, and show a clear explanation on the reveal screen.
@@ -661,18 +708,21 @@ go("reveal");
 - [ ] **Step 3: Pass genFailed to Reveal**
 
 In the `{step === "reveal" && ...}` block, pass `genFailed`:
+
 ```tsx
-{step === "reveal" && (
-  <Reveal
-    childName={data.childName || "Your child"}
-    dream={data.q1 || "something wonderful"}
-    problem={data.q3 || "the world"}
-    imageUrl={imageUrl}
-    caption={caption}
-    genFailed={imageGenFailed}
-    onNext={() => go("next")}
-  />
-)}
+{
+  step === "reveal" && (
+    <Reveal
+      childName={data.childName || "Your child"}
+      dream={data.q1 || "something wonderful"}
+      problem={data.q3 || "the world"}
+      imageUrl={imageUrl}
+      caption={caption}
+      genFailed={imageGenFailed}
+      onNext={() => go("next")}
+    />
+  );
+}
 ```
 
 - [ ] **Step 4: Update Reveal component to accept and show genFailed**
@@ -774,6 +824,7 @@ function Reveal({
 - [ ] **Step 5: Reset imageGenFailed on Next Child**
 
 In the NextChild `onNext` handler (Task 8), add the reset:
+
 ```tsx
 setImageGenFailed(false);
 ```
@@ -783,6 +834,7 @@ setImageGenFailed(false);
 ```bash
 cd ~/Projects/care-camp-app && npm run build
 ```
+
 Expected: `✓ built in Xs` with no errors.
 
 - [ ] **Step 7: Commit**
@@ -796,6 +848,7 @@ cd ~/Projects/care-camp-app && git add src/components/DreamFlow.tsx && git commi
 ## Task 10: D7 — Card loss prevention on NextChild screen
 
 **Files:**
+
 - Modify: `src/components/DreamFlow.tsx` (NextChild component)
 
 After "Next Child" is tapped from the reveal screen, `imageUrl` is cleared and the card is gone. The `NextChild` screen should keep a thumbnail of the just-generated card visible with a download button, so a parent can still save it before the next registration begins.
@@ -805,7 +858,15 @@ After "Next Child" is tapped from the reveal screen, `imageUrl` is cleared and t
 Replace the entire `NextChild` function:
 
 ```tsx
-function NextChild({ childName, imageUrl, onNext }: { childName: string; imageUrl: string | null; onNext: () => void }) {
+function NextChild({
+  childName,
+  imageUrl,
+  onNext,
+}: {
+  childName: string;
+  imageUrl: string | null;
+  onNext: () => void;
+}) {
   const handleDownload = async () => {
     if (!imageUrl) return;
     try {
@@ -872,6 +933,7 @@ function NextChild({ childName, imageUrl, onNext }: { childName: string; imageUr
 ```bash
 cd ~/Projects/care-camp-app && npm run build
 ```
+
 Expected: `✓ built in Xs` with no errors.
 
 - [ ] **Step 3: Browser verify**
@@ -891,29 +953,31 @@ git push
 
 **Spec coverage check:**
 
-| Spec item | Task |
-|-----------|------|
-| A8 date bug on new camp confirmation | Task 1 ✓ |
-| C1 CHO wrong empty state | Task 2 ✓ |
-| A4 stats filtered | Task 3 ✓ |
-| A5 open/closed badge | Task 4 ✓ |
-| A13 refresh registrations | Task 5 ✓ |
-| C3 fullscreen QR | Task 6 ✓ |
-| D1 invalid session → error | Task 7 ✓ |
-| D3 city pre-fill | Task 7 ✓ |
-| D4 retain parent info 2nd child | Task 8 ✓ |
-| D6 honest gen failure | Task 9 ✓ |
-| D7 card loss prevention | Task 10 ✓ |
+| Spec item                            | Task      |
+| ------------------------------------ | --------- |
+| A8 date bug on new camp confirmation | Task 1 ✓  |
+| C1 CHO wrong empty state             | Task 2 ✓  |
+| A4 stats filtered                    | Task 3 ✓  |
+| A5 open/closed badge                 | Task 4 ✓  |
+| A13 refresh registrations            | Task 5 ✓  |
+| C3 fullscreen QR                     | Task 6 ✓  |
+| D1 invalid session → error           | Task 7 ✓  |
+| D3 city pre-fill                     | Task 7 ✓  |
+| D4 retain parent info 2nd child      | Task 8 ✓  |
+| D6 honest gen failure                | Task 9 ✓  |
+| D7 card loss prevention              | Task 10 ✓ |
 
 **Placeholder check:** No TBDs, no "implement later", no vague steps — each step contains exact code.
 
 **Type consistency check:**
+
 - `getCampStatus` returns `{ is_open: boolean; city: string }` — used in Task 7 ✓
 - `imageGenFailed` state added in Task 9, reset in Task 9 (NextChild handler) ✓
 - `NextChild` gains `imageUrl: string | null` prop in Task 8, used in Task 10 ✓
 - `Reveal` gains `genFailed: boolean` prop in Task 9, passed in same task ✓
 
 **Ordering check:**
+
 - Task 8 adds `imageUrl` to `NextChild` props signature — Task 10 depends on this. Order is correct ✓
 - Task 9 adds `imageGenFailed` state — `setImageGenFailed(false)` is added to NextChild handler in same Task 9 step ✓
 - `setImageGenFailed(false)` reference in Task 8's step description is noted as "add in Task 9" to avoid undefined reference ✓

@@ -5,6 +5,7 @@
 ## 2026-05-04 — Phase 3.5: Camp status, QR on detail, design system
 
 **Accomplishments**
+
 - Added `is_open` column to `camp_sessions` (Supabase migration)
 - Added `toggleCampStatus()` and `getCampStatus()` to API layer
 - Admin camp detail: Open/Closed badge + toggle button with optimistic update + rollback
@@ -18,6 +19,7 @@
 - Audit passed, kaizen done, all changes committed and pushed
 
 **Key learnings**
+
 - Apply design tokens before building UI — retheme at audit costs double the work
 - Dark mode tokens must be explicitly defined alongside light tokens
 - Grep all user-visible strings before a rename — missed one without it
@@ -28,6 +30,7 @@
 ## 2026-05-02 — Session 2: Closeout + Phase 4 planning
 
 **Accomplishments**
+
 - Discovered all Phase 1-3 work was uncommitted — committed, fixed git credentials, pushed to GitHub
 - Ran full audit: extracted `toSession()` helper (DRY fix), fixed CardYesNo inconsistency, fixed empty catch block, auto-fixed prettier across all files
 - Ran kaizen: 5 SDLC rules added to CLAUDE.md (commit discipline, worktree .env check, mapper DRY, component consistency, credentials pre-flight)
@@ -43,6 +46,7 @@
 ## 2026-05-02 — Phases 1–3: Supabase backend + full frontend wiring
 
 **Accomplishments**
+
 - Created Supabase project with three tables: `camp_sessions`, `parent_registrations`, `child_answers`
 - Built Supabase client (`src/lib/supabase.ts`) and full API layer (`src/lib/api.ts`) with five functions: `createSession`, `getSessions`, `getSession`, `registerParentAndChild`, `markCardGenerated`
 - Admin dashboard now fetches live sessions from Supabase with city/chapter filter dropdowns
@@ -53,6 +57,7 @@
 - CLAUDE.md updated with session startup checklist and SDLC rules from kaizen
 
 **Key learnings**
+
 - Commit after every phase — uncommitted work is invisible to worktrees and future sessions
 - Extract type-transformation helpers early (mappers/transformers drift silently when duplicated)
 - UI components must be used consistently — never inline a component's equivalent in the same file
@@ -63,6 +68,7 @@
 ## Pre-2026-05-02 — Phase 0: UI scaffolding (Lovable)
 
 **Accomplishments**
+
 - Built full parent/child flow UI (DreamFlow component, 7 screens) in Lovable
 - Built admin dashboard UI with mock data
 - Made admin section responsive (mobile, tablet, desktop)

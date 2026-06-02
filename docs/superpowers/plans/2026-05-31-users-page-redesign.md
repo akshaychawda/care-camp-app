@@ -12,16 +12,17 @@
 
 ## File Map
 
-| File | Change |
-|------|--------|
-| `src/lib/api.ts` | Update `getAllUsers()` to return all statuses; remove `getPendingUsers()` |
-| `src/routes/admin.users.tsx` | Full redesign — remove tabs, add filter pills, unified UserRow |
+| File                         | Change                                                                    |
+| ---------------------------- | ------------------------------------------------------------------------- |
+| `src/lib/api.ts`             | Update `getAllUsers()` to return all statuses; remove `getPendingUsers()` |
+| `src/routes/admin.users.tsx` | Full redesign — remove tabs, add filter pills, unified UserRow            |
 
 ---
 
 ### Task 1: Update `getAllUsers()` in api.ts
 
 **Files:**
+
 - Modify: `src/lib/api.ts`
 
 - [ ] **Step 1: Update `getAllUsers` to return all statuses**
@@ -89,6 +90,7 @@ cd ~/Projects/care-camp-app && git add src/lib/api.ts && git commit -m "refactor
 ### Task 2: Rewrite admin.users.tsx — filter state + sorting
 
 **Files:**
+
 - Modify: `src/routes/admin.users.tsx`
 
 This task replaces the entire file. Do it in stages.
@@ -186,6 +188,7 @@ cd ~/Projects/care-camp-app && git add src/routes/admin.users.tsx && git commit 
 ### Task 3: Add shared UI primitives and RoleBadge
 
 **Files:**
+
 - Modify: `src/routes/admin.users.tsx`
 
 - [ ] **Step 1: Add RoleBadge and helper components after the constants**
@@ -265,6 +268,7 @@ cd ~/Projects/care-camp-app && git add src/routes/admin.users.tsx && git commit 
 ### Task 4: Build the unified UserRow component
 
 **Files:**
+
 - Modify: `src/routes/admin.users.tsx`
 
 - [ ] **Step 1: Add the unified UserRow component**
@@ -490,6 +494,7 @@ The `InviteModal` component stays the same. No changes needed. Skip to Task 6.
 ### Task 6: Rewrite UsersPage with filter pills + unified list
 
 **Files:**
+
 - Modify: `src/routes/admin.users.tsx`
 
 - [ ] **Step 1: Replace the UsersPage component**
@@ -729,6 +734,7 @@ cd ~/Projects/care-camp-app && git push origin main
 ```
 
 Then check `https://mad-care-camps.vercel.app/admin/users` after Vercel deploys (~1 min):
+
 - Status pills show correct counts
 - Pending users appear at top
 - Filtering "CO + Pending" shows only pending COs

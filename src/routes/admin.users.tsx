@@ -70,7 +70,9 @@ function sortUsers(users: Profile[]): Profile[] {
 
 function RoleBadge({ role }: { role: UserRole }) {
   return (
-    <span className={`inline-block px-2 py-0.5 rounded-md text-xs font-semibold ${ROLE_BADGE[role]}`}>
+    <span
+      className={`inline-block px-2 py-0.5 rounded-md text-xs font-semibold ${ROLE_BADGE[role]}`}
+    >
       {ROLE_LABELS[role]}
     </span>
   );
@@ -78,7 +80,9 @@ function RoleBadge({ role }: { role: UserRole }) {
 
 function StatusBadge({ status }: { status: UserStatus }) {
   return (
-    <span className={`inline-block px-2 py-0.5 rounded-md text-xs font-semibold capitalize ${STATUS_BADGE[status] ?? ""}`}>
+    <span
+      className={`inline-block px-2 py-0.5 rounded-md text-xs font-semibold capitalize ${STATUS_BADGE[status] ?? ""}`}
+    >
       {status}
     </span>
   );
@@ -87,7 +91,9 @@ function StatusBadge({ status }: { status: UserStatus }) {
 function Avatar({ name, status }: { name: string; status: UserStatus }) {
   const initial = (name || "?")[0].toUpperCase();
   return (
-    <div className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${AVATAR_COLOR[status] ?? "bg-secondary text-foreground"}`}>
+    <div
+      className={`h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${AVATAR_COLOR[status] ?? "bg-secondary text-foreground"}`}
+    >
       {initial}
     </div>
   );
@@ -118,7 +124,9 @@ function FilterPill({
     >
       {label}
       {count !== undefined && (
-        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold leading-none ${active ? "bg-white/25" : "bg-background/60 text-muted-foreground"}`}>
+        <span
+          className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold leading-none ${active ? "bg-white/25" : "bg-background/60 text-muted-foreground"}`}
+        >
           {count}
         </span>
       )}
@@ -154,13 +162,18 @@ function UserRow({
   const [pendingRole, setPendingRole] = useState<UserRole>(user.role);
   const [showRoleEdit, setShowRoleEdit] = useState(false);
 
-  const wrap = (fn: () => Promise<void>) => async () => {
+  const wrap = (fn: () => void | Promise<void>) => async () => {
     setBusy(true);
-    try { await fn(); } finally { setBusy(false); }
+    try {
+      await fn();
+    } finally {
+      setBusy(false);
+    }
   };
 
   const isNonMad = user.email && !user.email.endsWith("@makeadiff.in");
-  const canManage = currentRole === "super_admin" ||
+  const canManage =
+    currentRole === "super_admin" ||
     (currentRole === "mad_employee" && user.role !== "super_admin" && user.role !== "mad_employee");
 
   return (
@@ -196,7 +209,9 @@ function UserRow({
               disabled={busy}
               className={`h-9 px-2 rounded-lg border bg-input text-xs font-medium transition ${!assignRole ? "border-amber-400 text-muted-foreground" : "border-border text-foreground"}`}
             >
-              <option value="" disabled>Assign role…</option>
+              <option value="" disabled>
+                Assign role…
+              </option>
               <option value="cho">CHO</option>
               <option value="co">CO</option>
               <option value="mad_employee">MAD Employee</option>
@@ -207,7 +222,11 @@ function UserRow({
               disabled={busy || !assignRole}
               className="h-9 px-3 rounded-lg bg-emerald-600 text-white text-xs font-semibold flex items-center gap-1.5 hover:opacity-90 transition disabled:opacity-40"
             >
-              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+              {busy ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Check className="h-3.5 w-3.5" />
+              )}
               Approve
             </button>
             <button
@@ -224,15 +243,23 @@ function UserRow({
         {user.status === "invited" && canManage && (
           <>
             <button
-              onClick={wrap(async () => { onResend(user.email ?? "", user.full_name); })}
+              onClick={wrap(async () => {
+                onResend(user.email ?? "", user.full_name);
+              })}
               disabled={busy}
               className="h-9 px-3 rounded-lg border-2 border-primary text-primary text-xs font-semibold flex items-center gap-1.5 hover:bg-primary/10 transition disabled:opacity-40"
             >
-              {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+              {busy ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3.5 w-3.5" />
+              )}
               Resend
             </button>
             <button
-              onClick={wrap(async () => { onCancel(user.id); })}
+              onClick={wrap(async () => {
+                onCancel(user.id);
+              })}
               disabled={busy}
               className="h-9 px-3 rounded-lg border-2 border-destructive text-destructive text-xs font-semibold flex items-center gap-1.5 hover:bg-destructive/10 transition disabled:opacity-40"
             >
@@ -255,17 +282,29 @@ function UserRow({
                   <option value="cho">CHO</option>
                   <option value="co">CO</option>
                   <option value="mad_employee">MAD Employee</option>
-                  {currentRole === "super_admin" && <option value="super_admin">Super Admin</option>}
+                  {currentRole === "super_admin" && (
+                    <option value="super_admin">Super Admin</option>
+                  )}
                 </select>
                 <button
-                  onClick={wrap(async () => { await onRoleChange(user.id, pendingRole); setShowRoleEdit(false); })}
+                  onClick={wrap(async () => {
+                    await onRoleChange(user.id, pendingRole);
+                    setShowRoleEdit(false);
+                  })}
                   disabled={busy || pendingRole === user.role}
                   className="h-9 px-3 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center gap-1.5 hover:opacity-90 transition disabled:opacity-40"
                 >
-                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                  {busy ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Check className="h-3.5 w-3.5" />
+                  )}
                   Save
                 </button>
-                <button onClick={() => setShowRoleEdit(false)} className="h-9 px-2 rounded-lg border border-border text-xs text-muted-foreground hover:text-foreground transition">
+                <button
+                  onClick={() => setShowRoleEdit(false)}
+                  className="h-9 px-2 rounded-lg border border-border text-xs text-muted-foreground hover:text-foreground transition"
+                >
                   Cancel
                 </button>
               </>
@@ -282,7 +321,11 @@ function UserRow({
                   disabled={busy}
                   className="h-9 px-3 rounded-lg border-2 border-destructive text-destructive text-xs font-semibold flex items-center gap-1.5 hover:bg-destructive/10 transition disabled:opacity-40"
                 >
-                  {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserX className="h-3.5 w-3.5" />}
+                  {busy ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <UserX className="h-3.5 w-3.5" />
+                  )}
                   Disable
                 </button>
               </>
@@ -297,7 +340,11 @@ function UserRow({
             disabled={busy}
             className="h-9 px-3 rounded-lg border-2 border-emerald-500 text-emerald-500 text-xs font-semibold flex items-center gap-1.5 hover:bg-emerald-500/10 transition disabled:opacity-40"
           >
-            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserCheck className="h-3.5 w-3.5" />}
+            {busy ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <UserCheck className="h-3.5 w-3.5" />
+            )}
             Enable
           </button>
         )}
@@ -305,11 +352,17 @@ function UserRow({
         {/* REJECTED */}
         {user.status === "rejected" && canManage && (
           <button
-            onClick={wrap(async () => { onReinvite(user.email ?? "", user.full_name); })}
+            onClick={wrap(async () => {
+              onReinvite(user.email ?? "", user.full_name);
+            })}
             disabled={busy}
             className="h-9 px-3 rounded-lg border-2 border-primary text-primary text-xs font-semibold flex items-center gap-1.5 hover:bg-primary/10 transition disabled:opacity-40"
           >
-            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
+            {busy ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <UserPlus className="h-3.5 w-3.5" />
+            )}
             Reinvite
           </button>
         )}
@@ -330,13 +383,15 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
     setLoading(true);
     setError(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const token = session?.access_token;
       const res = await fetch("/api/invite-user", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ email, full_name: name }),
       });
@@ -353,7 +408,8 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
     }
   };
 
-  const inputCls = "w-full h-11 px-3 rounded-lg border border-border bg-input text-sm focus:outline-none focus:ring-2 focus:ring-ring";
+  const inputCls =
+    "w-full h-11 px-3 rounded-lg border border-border bg-input text-sm focus:outline-none focus:ring-2 focus:ring-ring";
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
@@ -363,26 +419,58 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
           <div className="text-center space-y-3 py-4">
             <Check className="h-10 w-10 text-emerald-500 mx-auto" />
             <p className="text-sm text-muted-foreground">
-              Invite sent to <span className="font-semibold text-foreground">{email}</span>. They'll get an email with a login link.
+              Invite sent to <span className="font-semibold text-foreground">{email}</span>. They'll
+              get an email with a login link.
             </p>
-            <button onClick={onClose} className="text-sm text-primary font-semibold hover:underline">Done</button>
+            <button
+              onClick={onClose}
+              className="text-sm text-primary font-semibold hover:underline"
+            >
+              Done
+            </button>
           </div>
         ) : (
           <form onSubmit={submit} className="space-y-4">
             <label className="block space-y-1.5">
               <span className="text-sm font-semibold text-foreground">Full name</span>
-              <input type="text" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Priya Sharma" className={inputCls} />
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Priya Sharma"
+                className={inputCls}
+              />
             </label>
             <label className="block space-y-1.5">
               <span className="text-sm font-semibold text-foreground">Work email</span>
-              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="priya@makeadiff.in" className={inputCls} />
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="priya@makeadiff.in"
+                className={inputCls}
+              />
             </label>
-            {error && <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">{error}</p>}
+            {error && (
+              <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">
+                {error}
+              </p>
+            )}
             <div className="flex gap-3">
-              <button type="button" onClick={onClose} className="flex-1 h-11 rounded-lg border border-border text-sm font-semibold text-muted-foreground hover:text-foreground transition">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 h-11 rounded-lg border border-border text-sm font-semibold text-muted-foreground hover:text-foreground transition"
+              >
                 Cancel
               </button>
-              <button type="submit" disabled={loading} className="flex-1 h-11 rounded-lg bg-primary text-primary-foreground text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50 hover:opacity-90 transition">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 h-11 rounded-lg bg-primary text-primary-foreground text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50 hover:opacity-90 transition"
+              >
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send invite"}
               </button>
             </div>
@@ -415,17 +503,23 @@ function UsersPage() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    users.forEach((u) => { counts[u.status] = (counts[u.status] ?? 0) + 1; });
+    users.forEach((u) => {
+      counts[u.status] = (counts[u.status] ?? 0) + 1;
+    });
     return counts;
   }, [users]);
 
   const roleCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    users.forEach((u) => { counts[u.role] = (counts[u.role] ?? 0) + 1; });
+    users.forEach((u) => {
+      counts[u.role] = (counts[u.role] ?? 0) + 1;
+    });
     return counts;
   }, [users]);
 
@@ -439,7 +533,10 @@ function UsersPage() {
   const currentRole = profile?.role ?? "cho";
   const canInvite = currentRole === "super_admin";
 
-  const statusLabel = statusFilter === "all" ? "All statuses" : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1);
+  const statusLabel =
+    statusFilter === "all"
+      ? "All statuses"
+      : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1);
   const roleLabel = roleFilter === "all" ? "All roles" : ROLE_LABELS[roleFilter as UserRole];
 
   const handleApprove = async (id: string, role: UserRole) => {
@@ -450,29 +547,46 @@ function UsersPage() {
         if (!session?.access_token) return;
         fetch("/api/notify-approval", {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
           body: JSON.stringify({ userId: id }),
         }).catch(() => {});
       });
-    } catch { toast.error("Something went wrong"); }
+    } catch {
+      toast.error("Something went wrong");
+    }
     await load();
   };
 
   const handleReject = async (id: string) => {
-    try { await rejectUser(id); toast.success("Request rejected"); }
-    catch { toast.error("Something went wrong"); }
+    try {
+      await rejectUser(id);
+      toast.success("Request rejected");
+    } catch {
+      toast.error("Something went wrong");
+    }
     await load();
   };
 
   const handleDisable = async (id: string) => {
-    try { await disableUser(id); toast.success("User disabled"); }
-    catch { toast.error("Something went wrong"); }
+    try {
+      await disableUser(id);
+      toast.success("User disabled");
+    } catch {
+      toast.error("Something went wrong");
+    }
     await load();
   };
 
   const handleEnable = async (id: string) => {
-    try { await enableUser(id); toast.success("User enabled"); }
-    catch { toast.error("Something went wrong"); }
+    try {
+      await enableUser(id);
+      toast.success("User enabled");
+    } catch {
+      toast.error("Something went wrong");
+    }
     await load();
   };
 
@@ -487,19 +601,31 @@ function UsersPage() {
   };
 
   const handleCancel = async (id: string) => {
-    try { await cancelInvite(id); toast.success("Invite cancelled"); }
-    catch { toast.error("Something went wrong"); }
+    try {
+      await cancelInvite(id);
+      toast.success("Invite cancelled");
+    } catch {
+      toast.error("Something went wrong");
+    }
     await load();
   };
 
   const handleResend = async (email: string, fullName: string) => {
-    try { await resendInvite(email, fullName); toast.success("Invite resent"); }
-    catch { toast.error("Something went wrong"); }
+    try {
+      await resendInvite(email, fullName);
+      toast.success("Invite resent");
+    } catch {
+      toast.error("Something went wrong");
+    }
   };
 
   const handleReinvite = async (email: string, fullName: string) => {
-    try { await resendInvite(email, fullName); toast.success("Invite sent"); }
-    catch { toast.error("Something went wrong"); }
+    try {
+      await resendInvite(email, fullName);
+      toast.success("Invite sent");
+    } catch {
+      toast.error("Something went wrong");
+    }
     await load();
   };
 
@@ -513,7 +639,11 @@ function UsersPage() {
           <p className="text-sm text-muted-foreground mt-1">Manage team access and approvals.</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <button onClick={load} className="h-9 w-9 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition" title="Refresh">
+          <button
+            onClick={load}
+            className="h-9 w-9 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition"
+            title="Refresh"
+          >
             <RefreshCw className="h-4 w-4" />
           </button>
           {canInvite && (
@@ -530,44 +660,109 @@ function UsersPage() {
 
       {/* Status filter */}
       <div className="mb-3">
-        <p className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-2">Status</p>
+        <p className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-2">
+          Status
+        </p>
         <div className="flex gap-2 flex-wrap">
-          <FilterPill label="All" count={users.length} active={statusFilter === "all"} onClick={() => setStatusFilter("all")} />
-          <FilterPill label="Pending" count={statusCounts["pending"] ?? 0} active={statusFilter === "pending"} onClick={() => setStatusFilter("pending")} variant="pending" />
-          <FilterPill label="Invited" count={statusCounts["invited"] ?? 0} active={statusFilter === "invited"} onClick={() => setStatusFilter("invited")} />
-          <FilterPill label="Active" count={statusCounts["active"] ?? 0} active={statusFilter === "active"} onClick={() => setStatusFilter("active")} />
-          <FilterPill label="Disabled" count={statusCounts["disabled"] ?? 0} active={statusFilter === "disabled"} onClick={() => setStatusFilter("disabled")} />
+          <FilterPill
+            label="All"
+            count={users.length}
+            active={statusFilter === "all"}
+            onClick={() => setStatusFilter("all")}
+          />
+          <FilterPill
+            label="Pending"
+            count={statusCounts["pending"] ?? 0}
+            active={statusFilter === "pending"}
+            onClick={() => setStatusFilter("pending")}
+            variant="pending"
+          />
+          <FilterPill
+            label="Invited"
+            count={statusCounts["invited"] ?? 0}
+            active={statusFilter === "invited"}
+            onClick={() => setStatusFilter("invited")}
+          />
+          <FilterPill
+            label="Active"
+            count={statusCounts["active"] ?? 0}
+            active={statusFilter === "active"}
+            onClick={() => setStatusFilter("active")}
+          />
+          <FilterPill
+            label="Disabled"
+            count={statusCounts["disabled"] ?? 0}
+            active={statusFilter === "disabled"}
+            onClick={() => setStatusFilter("disabled")}
+          />
         </div>
       </div>
 
       {/* Role filter */}
       <div className="mb-4">
-        <p className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-2">Role</p>
+        <p className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-widest mb-2">
+          Role
+        </p>
         <div className="flex gap-2 flex-wrap">
-          <FilterPill label="All roles" active={roleFilter === "all"} onClick={() => setRoleFilter("all")} />
-          <FilterPill label="MAD Employee" count={roleCounts["mad_employee"] ?? 0} active={roleFilter === "mad_employee"} onClick={() => setRoleFilter("mad_employee")} />
-          <FilterPill label="CO" count={roleCounts["co"] ?? 0} active={roleFilter === "co"} onClick={() => setRoleFilter("co")} />
-          <FilterPill label="CHO" count={roleCounts["cho"] ?? 0} active={roleFilter === "cho"} onClick={() => setRoleFilter("cho")} />
+          <FilterPill
+            label="All roles"
+            active={roleFilter === "all"}
+            onClick={() => setRoleFilter("all")}
+          />
+          <FilterPill
+            label="MAD Employee"
+            count={roleCounts["mad_employee"] ?? 0}
+            active={roleFilter === "mad_employee"}
+            onClick={() => setRoleFilter("mad_employee")}
+          />
+          <FilterPill
+            label="CO"
+            count={roleCounts["co"] ?? 0}
+            active={roleFilter === "co"}
+            onClick={() => setRoleFilter("co")}
+          />
+          <FilterPill
+            label="CHO"
+            count={roleCounts["cho"] ?? 0}
+            active={roleFilter === "cho"}
+            onClick={() => setRoleFilter("cho")}
+          />
         </div>
       </div>
 
       <p className="text-xs text-muted-foreground mb-3">
-        Showing <span className="font-semibold text-foreground">{filtered.length} {filtered.length === 1 ? "user" : "users"}</span>
-        {" · "}{statusLabel}{" · "}{roleLabel}
+        Showing{" "}
+        <span className="font-semibold text-foreground">
+          {filtered.length} {filtered.length === 1 ? "user" : "users"}
+        </span>
+        {" · "}
+        {statusLabel}
+        {" · "}
+        {roleLabel}
       </p>
 
       <div className="bg-secondary/30 rounded-xl overflow-hidden">
         {loading ? (
-          <div className="py-12 flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+          <div className="py-12 flex justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
         ) : loadError ? (
           <div className="py-12 text-center space-y-3">
             <p className="text-sm text-muted-foreground">Failed to load users.</p>
-            <button onClick={load} className="text-sm text-primary font-semibold hover:underline">Try again</button>
+            <button onClick={load} className="text-sm text-primary font-semibold hover:underline">
+              Try again
+            </button>
           </div>
         ) : filtered.length === 0 ? (
           <div className="py-12 text-center space-y-2">
             <p className="text-sm text-muted-foreground">No users match these filters.</p>
-            <button onClick={() => { setStatusFilter("all"); setRoleFilter("all"); }} className="text-sm text-primary font-semibold hover:underline">
+            <button
+              onClick={() => {
+                setStatusFilter("all");
+                setRoleFilter("all");
+              }}
+              className="text-sm text-primary font-semibold hover:underline"
+            >
               Clear filters
             </button>
           </div>
@@ -592,9 +787,7 @@ function UsersPage() {
         )}
       </div>
 
-      {showInvite && (
-        <InviteModal onClose={() => setShowInvite(false)} onInvited={load} />
-      )}
+      {showInvite && <InviteModal onClose={() => setShowInvite(false)} onInvited={load} />}
     </div>
   );
 }

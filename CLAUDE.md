@@ -1,11 +1,13 @@
 # CLAUDE.md — Care Camps App
 
 ## What this is
+
 Mobile web app for MAD (Make A Difference NGO) India. Parents scan a QR code at a Care Camp event, answer 5 aspiration questions about their child, and receive an AI-generated watercolor dream card. Internal staff manage camps via an authenticated dashboard.
 
 **First camp: 2026-06-06. App is live at https://mad-care-camps.vercel.app**
 
 ## Stack
+
 - **Frontend:** React + TypeScript + TanStack Router, Vite SPA
 - **Hosting:** Vercel Pro
 - **Database + Auth:** Supabase Pro (`etrlbxugodyvexzsyfdk.supabase.co`)
@@ -14,15 +16,17 @@ Mobile web app for MAD (Make A Difference NGO) India. Parents scan a QR code at 
 - **Storage:** Supabase Storage bucket `dream-cards`
 
 ## Roles
-| Role | Who | Access |
-|------|-----|--------|
-| `super_admin` | Akshay + leads | Everything |
-| `mad_employee` | MAD staff | All camps, approve users |
-| `co` | Chapter Organizers | Own + assigned + shared camps |
-| `cho` | Community Health Organizers | Shared camps only, read-only |
-| *(none)* | Parents | Public unauthenticated flow |
+
+| Role           | Who                         | Access                        |
+| -------------- | --------------------------- | ----------------------------- |
+| `super_admin`  | Akshay + leads              | Everything                    |
+| `mad_employee` | MAD staff                   | All camps, approve users      |
+| `co`           | Chapter Organizers          | Own + assigned + shared camps |
+| `cho`          | Community Health Organizers | Shared camps only, read-only  |
+| _(none)_       | Parents                     | Public unauthenticated flow   |
 
 ## Open bugs — fix in this order before 2026-06-06
+
 1. **C4** `src/routes/admin.users.tsx` InviteModal — add `Authorization: Bearer <token>` header (invite broken)
 2. **C3** `src/components/DreamFlow.tsx` — add `"checking"` initial step to prevent race condition on camp-closed redirect
 3. **C1** `api/generate-image.ts` — verify registrationId in DB before generating; return cached URL if card_generated=true
@@ -33,6 +37,7 @@ Mobile web app for MAD (Make A Difference NGO) India. Parents scan a QR code at 
 8. **M6** date timezone — `new Date(s.date + "T00:00:00")` in dashboard + session detail
 
 ## SDLC workflow
+
 ```
 New feature   → /brainstorming first
 Task list     → /executing-plans
@@ -42,6 +47,7 @@ Hit a bug     → /systematic-debugging
 ```
 
 ## Commands
+
 ```bash
 npm run dev      # local dev
 npm run build    # build (run before committing)
@@ -49,11 +55,13 @@ git push origin main  # triggers Vercel auto-deploy
 ```
 
 ## Environment variables (set in Vercel)
+
 - `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY` — client-side Supabase
 - `SUPABASE_SERVICE_ROLE_KEY` — server-side only (API functions)
 - `OPENAI_API_KEY` — gpt-4o-mini + gpt-image-2
 
 ## Original What this is (kept for context)
+
 Mobile web app for MAD Care Camp entry events. A parent/child pair answers aspiration questions, the app generates an AI image card of the child's dream, and delivers it to the parent's WhatsApp. MAD coordinators monitor activity via an admin dashboard.
 
 Full PRD: `docs/prd.md` — read this before planning or building anything.
@@ -63,16 +71,18 @@ Full PRD: `docs/prd.md` — read this before planning or building anything.
 ---
 
 ## Tech stack
-| Layer | Tool |
-|-------|------|
-| Framework | Vite + React + TypeScript |
-| Routing | TanStack Router (file-based, routes in `src/routes/`) |
-| UI components | shadcn/ui (Radix UI primitives + Tailwind) |
-| Backend / deploy | Cloudflare Workers (`wrangler.jsonc`) |
-| Database (dev) | Supabase (PostgreSQL — easy setup, same SQL as AWS RDS) |
+
+| Layer                         | Tool                                                              |
+| ----------------------------- | ----------------------------------------------------------------- |
+| Framework                     | Vite + React + TypeScript                                         |
+| Routing                       | TanStack Router (file-based, routes in `src/routes/`)             |
+| UI components                 | shadcn/ui (Radix UI primitives + Tailwind)                        |
+| Backend / deploy              | Cloudflare Workers (`wrangler.jsonc`)                             |
+| Database (dev)                | Supabase (PostgreSQL — easy setup, same SQL as AWS RDS)           |
 | Database (production, future) | AWS RDS (PostgreSQL) — migration from Supabase is straightforward |
 
 ## Key files
+
 - `src/components/DreamFlow.tsx` — parent/child flow (all 7 screens)
 - `src/components/PhoneFrame.tsx` — mobile wrapper for the parent flow
 - `src/components/admin/AdminLayout.tsx` — responsive admin sidebar/nav
@@ -85,6 +95,7 @@ Full PRD: `docs/prd.md` — read this before planning or building anything.
 - `src/lib/api.ts` — all database functions (createSession, getSessions, getSession, registerParentAndChild, markCardGenerated)
 
 ## Dev commands
+
 ```bash
 npm install      # install dependencies
 npm run dev      # start dev server
@@ -95,25 +106,27 @@ npm run lint     # eslint
 ---
 
 ## Build status
-| Feature | Status |
-|---------|--------|
-| Parent/child UI flow | ✅ Built + wired to Supabase |
-| Admin dashboard UI | ✅ Built + live data from Supabase |
-| Database (sessions, registrations) | ✅ Phase 1 — done |
-| API layer | ✅ Phase 2 — done |
-| Frontend wired to real data | ✅ Phase 3 — done |
-| QR code generation | ✅ Phase 3 — done |
-| "Next child" session reset | ✅ Phase 3 — done |
-| Cloudflare deployment | ⬜ Not yet deployed — run `npm run deploy` |
-| Camp open/close status + toggle | ✅ Phase 3.5 — done |
-| Camp closed screen (parent flow) | ✅ Phase 3.5 — done |
-| QR code on session detail | ✅ Phase 3.5 — done |
-| MAD design system (red, Inter, dark mode) | ✅ Phase 3.5 — done |
-| AI image generation | ⬜ Phase 4 — ready to build (needs OpenAI or Replicate API key) |
-| WhatsApp delivery | Deferred — Phase 5 (needs Twilio setup) |
-| AWS migration | Deferred — Phase 6 |
+
+| Feature                                   | Status                                                          |
+| ----------------------------------------- | --------------------------------------------------------------- |
+| Parent/child UI flow                      | ✅ Built + wired to Supabase                                    |
+| Admin dashboard UI                        | ✅ Built + live data from Supabase                              |
+| Database (sessions, registrations)        | ✅ Phase 1 — done                                               |
+| API layer                                 | ✅ Phase 2 — done                                               |
+| Frontend wired to real data               | ✅ Phase 3 — done                                               |
+| QR code generation                        | ✅ Phase 3 — done                                               |
+| "Next child" session reset                | ✅ Phase 3 — done                                               |
+| Cloudflare deployment                     | ⬜ Not yet deployed — run `npm run deploy`                      |
+| Camp open/close status + toggle           | ✅ Phase 3.5 — done                                             |
+| Camp closed screen (parent flow)          | ✅ Phase 3.5 — done                                             |
+| QR code on session detail                 | ✅ Phase 3.5 — done                                             |
+| MAD design system (red, Inter, dark mode) | ✅ Phase 3.5 — done                                             |
+| AI image generation                       | ⬜ Phase 4 — ready to build (needs OpenAI or Replicate API key) |
+| WhatsApp delivery                         | Deferred — Phase 5 (needs Twilio setup)                         |
+| AWS migration                             | Deferred — Phase 6                                              |
 
 ## Current state (as of 2026-05-04)
+
 - All code committed and pushed to GitHub: https://github.com/akshaychawda/care-camp-app
 - Phase 3.5 complete: camp status toggle, QR on detail, closed-camp screen, MAD design system applied
 - App tested locally — all flows working, light + dark mode verified
@@ -125,6 +138,7 @@ npm run lint     # eslint
 **What it does:** Generates a real AI image of the child's dream using their 5 answers, stores the URL in Supabase, shows it on the card reveal screen.
 
 **Steps (already designed):**
+
 1. Run in Supabase SQL Editor: `ALTER TABLE parent_registrations ADD COLUMN image_url TEXT;`
 2. Add `OPENAI_API_KEY=sk-...` to `.env` and `.dev.vars`
 3. Create `src/lib/generate-image.server.ts` — TanStack Start server function that calls DALL-E 3
@@ -150,17 +164,20 @@ MAD hosts on AWS and uses AWS RDS. The dev database (Supabase) is PostgreSQL —
 ---
 
 ## Build constraints
+
 - Mobile browser only for parent flow — no app install
 - Must work on mid-range Android on standard mobile data
 - 30–50 parents per camp session
 - Admin works on mobile, tablet, and desktop
 
 ## Out of scope — v1
+
 Voice input, languages other than English, DPDP consent, structured child data storage, volunteer login, configurable questions, admin authentication.
 
 ---
 
 ## Session startup
+
 1. Read this file
 2. Read `docs/prd.md`
 3. Read `PROJECT_HISTORY.md` — orient on what's done

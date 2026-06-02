@@ -25,7 +25,10 @@ export default async function handler(req: Request): Promise<Response> {
 
   // Verify caller is super_admin or mad_employee
   const token = authHeader.replace("Bearer ", "");
-  const { data: { user }, error: authErr } = await admin.auth.getUser(token);
+  const {
+    data: { user },
+    error: authErr,
+  } = await admin.auth.getUser(token);
   if (authErr || !user) return json({ error: "Unauthorized" }, 401);
 
   const { data: callerProfile } = await admin
@@ -34,8 +37,11 @@ export default async function handler(req: Request): Promise<Response> {
     .eq("id", user.id)
     .single();
 
-  if (!callerProfile || callerProfile.status !== "active" ||
-      !["super_admin", "mad_employee"].includes(callerProfile.role)) {
+  if (
+    !callerProfile ||
+    callerProfile.status !== "active" ||
+    !["super_admin", "mad_employee"].includes(callerProfile.role)
+  ) {
     return json({ error: "Forbidden" }, 403);
   }
 
@@ -43,7 +49,10 @@ export default async function handler(req: Request): Promise<Response> {
   const { userId } = await req.json();
   if (!userId) return json({ error: "userId required" }, 400);
 
-  const { data: { user: approvedUser }, error: userErr } = await admin.auth.admin.getUserById(userId);
+  const {
+    data: { user: approvedUser },
+    error: userErr,
+  } = await admin.auth.admin.getUserById(userId);
   if (userErr || !approvedUser?.email) return json({ error: "User not found" }, 404);
 
   const { data: approvedProfile } = await admin
@@ -53,7 +62,8 @@ export default async function handler(req: Request): Promise<Response> {
     .single();
 
   const name = approvedProfile?.full_name || "there";
-  const role = approvedProfile?.role === "co" ? "Chapter Organizer (CO)" : "Community Health Organizer (CHO)";
+  const role =
+    approvedProfile?.role === "co" ? "Chapter Organizer (CO)" : "Community Health Organizer (CHO)";
 
   // Send email via Brevo API
   const emailRes = await fetch("https://api.brevo.com/v3/smtp/email", {

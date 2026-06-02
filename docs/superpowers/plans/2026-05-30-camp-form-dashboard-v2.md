@@ -12,13 +12,13 @@
 
 ## File Map
 
-| File | Tasks |
-|------|-------|
-| Supabase SQL editor (manual) | Task 1 |
-| `src/lib/api.ts` | Tasks 2, 3 |
-| `src/routes/admin.new.tsx` | Task 4 |
-| `src/routes/admin.index.tsx` | Tasks 5, 6 |
-| `src/routes/admin.sessions.$sessionId.tsx` | Task 7 |
+| File                                       | Tasks      |
+| ------------------------------------------ | ---------- |
+| Supabase SQL editor (manual)               | Task 1     |
+| `src/lib/api.ts`                           | Tasks 2, 3 |
+| `src/routes/admin.new.tsx`                 | Task 4     |
+| `src/routes/admin.index.tsx`               | Tasks 5, 6 |
+| `src/routes/admin.sessions.$sessionId.tsx` | Task 7     |
 
 ---
 
@@ -48,6 +48,7 @@ ALTER TABLE camp_sessions ADD COLUMN closed_at TIMESTAMPTZ;
 - [ ] **Step 3: Verify**
 
 In Supabase Table Editor, open `camp_sessions`. Confirm:
+
 - Column `chapter` no longer exists
 - Column `area` exists with existing data (Deccan, Baner, etc. preserved)
 - Column `venue` exists (nullable text)
@@ -58,6 +59,7 @@ In Supabase Table Editor, open `camp_sessions`. Confirm:
 ## Task 2: Update api.ts — Types + Core Functions
 
 **Files:**
+
 - Modify: `src/lib/api.ts`
 
 Updates: `CampSession` type, `toSession` helper, `createSession`, `getSessions`, `getSession`, `toggleCampStatus`.
@@ -193,6 +195,7 @@ export async function toggleCampStatus(id: string, isOpen: boolean): Promise<voi
 ```bash
 cd ~/Projects/care-camp-app && npm run build
 ```
+
 Expected: `✓ built in Xs` — TypeScript will catch any type mismatches.
 
 - [ ] **Step 8: Commit**
@@ -206,6 +209,7 @@ cd ~/Projects/care-camp-app && git add src/lib/api.ts && git commit -m "feat(api
 ## Task 3: Add getRegistrationTimeline + getCampOwners to api.ts
 
 **Files:**
+
 - Modify: `src/lib/api.ts` (append to end of file)
 
 Two new exported functions used by the dashboard chart and Assigned To filter.
@@ -235,7 +239,12 @@ export async function getRegistrationTimeline(filters: {
 
   // Apply camp-level filters in JS
   const filtered = (data ?? []).filter((r) => {
-    const s = r.camp_sessions as { city: string; area: string; is_open: boolean; created_by: string };
+    const s = r.camp_sessions as {
+      city: string;
+      area: string;
+      is_open: boolean;
+      created_by: string;
+    };
     if (filters.city && s.city !== filters.city) return false;
     if (filters.area && s.area !== filters.area) return false;
     if (filters.isOpen !== undefined && s.is_open !== filters.isOpen) return false;
@@ -275,6 +284,7 @@ export async function getCampOwners(): Promise<Profile[]> {
 ```bash
 cd ~/Projects/care-camp-app && npm run build
 ```
+
 Expected: `✓ built in Xs`.
 
 - [ ] **Step 3: Commit**
@@ -288,6 +298,7 @@ cd ~/Projects/care-camp-app && git add src/lib/api.ts && git commit -m "feat(api
 ## Task 4: Redesign admin.new.tsx — City Combobox + Area + Venue
 
 **Files:**
+
 - Modify: `src/routes/admin.new.tsx`
 
 Replace Chapter field with Area, add Venue (optional), replace city text input with a `<datalist>`-powered combobox. Update form validation, submission, and confirmation page.
@@ -297,6 +308,7 @@ Replace Chapter field with Area, add Venue (optional), replace city text input w
 In `admin.new.tsx`, add the constant before the `NewCamp` function and update the state:
 
 Replace:
+
 ```tsx
 function NewCamp() {
   const [city, setCity] = useState("");
@@ -305,6 +317,7 @@ function NewCamp() {
 ```
 
 With:
+
 ```tsx
 const CITIES = [
   "Ahmedabad", "Bengaluru", "Chandigarh", "Chennai", "Cochin", "Coimbatore",
@@ -324,21 +337,21 @@ function NewCamp() {
 Replace the `submit` function's guard and `createSession` call:
 
 ```tsx
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!city || !area || !date) return;
-    setSaving(true);
-    setError(null);
-    try {
-      const session = await createSession(city, area, venue, format(date, "yyyy-MM-dd"));
-      const link = `${window.location.origin}/?session=${session.id}`;
-      setCreated({ session, link });
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to create session. Please try again.");
-    } finally {
-      setSaving(false);
-    }
-  };
+const submit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!city || !area || !date) return;
+  setSaving(true);
+  setError(null);
+  try {
+    const session = await createSession(city, area, venue, format(date, "yyyy-MM-dd"));
+    const link = `${window.location.origin}/?session=${session.id}`;
+    setCreated({ session, link });
+  } catch (err: unknown) {
+    setError(err instanceof Error ? err.message : "Failed to create session. Please try again.");
+  } finally {
+    setSaving(false);
+  }
+};
 ```
 
 - [ ] **Step 3: Update onReset in the Confirmation branch**
@@ -416,25 +429,29 @@ Keep the Date picker JSX (Popover/Calendar) exactly as it is — only replace th
 In the `Confirmation` function, update the `share` text and the heading:
 
 ```tsx
-  const share = () => {
-    const text = `Join the MAD Care Camp — ${data.session.city}, ${data.session.area}${data.session.venue ? ` (${data.session.venue})` : ""} on ${new Date(data.session.date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}: ${data.link}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
-  };
+const share = () => {
+  const text = `Join the MAD Care Camp — ${data.session.city}, ${data.session.area}${data.session.venue ? ` (${data.session.venue})` : ""} on ${new Date(data.session.date + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}: ${data.link}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+};
 ```
 
 Replace the `<h1>` in Confirmation:
+
 ```tsx
-        <h1 className="text-2xl font-bold text-foreground">
-          {data.session.city} — {data.session.area}
-        </h1>
-        {data.session.venue && (
-          <p className="text-muted-foreground text-sm mt-0.5">{data.session.venue}</p>
-        )}
+<h1 className="text-2xl font-bold text-foreground">
+  {data.session.city} — {data.session.area}
+</h1>;
+{
+  data.session.venue && (
+    <p className="text-muted-foreground text-sm mt-0.5">{data.session.venue}</p>
+  );
+}
 ```
 
 Also update the page subtitle in `NewCamp` function:
+
 ```tsx
-      <p className="text-sm text-muted-foreground mb-8">Set up a Care Camp for your community.</p>
+<p className="text-sm text-muted-foreground mb-8">Set up a Care Camp for your community.</p>
 ```
 
 - [ ] **Step 7: Build check**
@@ -442,6 +459,7 @@ Also update the page subtitle in `NewCamp` function:
 ```bash
 cd ~/Projects/care-camp-app && npm run build
 ```
+
 Expected: `✓ built in Xs`.
 
 - [ ] **Step 8: Commit**
@@ -455,6 +473,7 @@ cd ~/Projects/care-camp-app && git add src/routes/admin.new.tsx && git commit -m
 ## Task 5: Dashboard — 5 Stat Tiles + 4 Filters
 
 **Files:**
+
 - Modify: `src/routes/admin.index.tsx`
 
 Update stat tiles from 3 to 5 (Cities + Areas + Camps + Parents + Cards) and add 4 filters (City, Area, Status, Assigned To). Update all `chapter` references to `area`.
@@ -462,10 +481,13 @@ Update stat tiles from 3 to 5 (Cities + Areas + Camps + Parents + Cards) and add
 - [ ] **Step 1: Update imports**
 
 Replace the import line:
+
 ```tsx
 import { getSessions, type CampSession } from "@/lib/api";
 ```
+
 With:
+
 ```tsx
 import { getSessions, getCampOwners, type CampSession } from "@/lib/api";
 import type { Profile } from "@/lib/supabase";
@@ -476,24 +498,30 @@ Also update the lucide import — remove unused icons if any, the current set (`
 - [ ] **Step 2: Update Dashboard state**
 
 In the `Dashboard` function, replace:
+
 ```tsx
-  const [city, setCity] = useState("all");
-  const [chapter, setChapter] = useState("all");
+const [city, setCity] = useState("all");
+const [chapter, setChapter] = useState("all");
 ```
+
 With:
+
 ```tsx
-  const [city, setCity] = useState("all");
-  const [area, setArea] = useState("all");
-  const [status, setStatus] = useState<"all" | "open" | "closed">("all");
-  const [ownerId, setOwnerId] = useState("all");
-  const [owners, setOwners] = useState<Profile[]>([]);
+const [city, setCity] = useState("all");
+const [area, setArea] = useState("all");
+const [status, setStatus] = useState<"all" | "open" | "closed">("all");
+const [ownerId, setOwnerId] = useState("all");
+const [owners, setOwners] = useState<Profile[]>([]);
 ```
 
 Add a useEffect to load owners (after the existing `getSessions` useEffect):
+
 ```tsx
-  useEffect(() => {
-    getCampOwners().then(setOwners).catch(() => {});
-  }, []);
+useEffect(() => {
+  getCampOwners()
+    .then(setOwners)
+    .catch(() => {});
+}, []);
 ```
 
 - [ ] **Step 3: Update computed values**
@@ -501,38 +529,39 @@ Add a useEffect to load owners (after the existing `getSessions` useEffect):
 Replace the entire `cities` / `chapters` / `filtered` / `totals` block with:
 
 ```tsx
-  const cities = useMemo(() => Array.from(new Set(sessions.map((s) => s.city))).sort(), [sessions]);
-  const areas = useMemo(
-    () =>
-      Array.from(
-        new Set(sessions.filter((s) => city === "all" || s.city === city).map((s) => s.area)),
-      ).sort(),
-    [city, sessions],
-  );
+const cities = useMemo(() => Array.from(new Set(sessions.map((s) => s.city))).sort(), [sessions]);
+const areas = useMemo(
+  () =>
+    Array.from(
+      new Set(sessions.filter((s) => city === "all" || s.city === city).map((s) => s.area)),
+    ).sort(),
+  [city, sessions],
+);
 
-  const filtered = useMemo(
-    () =>
-      sessions.filter((s) => {
-        if (city !== "all" && s.city !== city) return false;
-        if (area !== "all" && s.area !== area) return false;
-        if (status === "open" && !s.is_open) return false;
-        if (status === "closed" && s.is_open) return false;
-        if (ownerId !== "all" && s.owner_name !== owners.find((o) => o.id === ownerId)?.full_name) return false;
-        return true;
-      }),
-    [sessions, city, area, status, ownerId, owners],
-  );
-
-  const totals = useMemo(
-    () => ({
-      cities: new Set(filtered.map((s) => s.city)).size,
-      areas: new Set(filtered.map((s) => s.area)).size,
-      camps: filtered.length,
-      parents: filtered.reduce((a, s) => a + s.parent_count, 0),
-      cards: filtered.reduce((a, s) => a + s.card_count, 0),
+const filtered = useMemo(
+  () =>
+    sessions.filter((s) => {
+      if (city !== "all" && s.city !== city) return false;
+      if (area !== "all" && s.area !== area) return false;
+      if (status === "open" && !s.is_open) return false;
+      if (status === "closed" && s.is_open) return false;
+      if (ownerId !== "all" && s.owner_name !== owners.find((o) => o.id === ownerId)?.full_name)
+        return false;
+      return true;
     }),
-    [filtered],
-  );
+  [sessions, city, area, status, ownerId, owners],
+);
+
+const totals = useMemo(
+  () => ({
+    cities: new Set(filtered.map((s) => s.city)).size,
+    areas: new Set(filtered.map((s) => s.area)).size,
+    camps: filtered.length,
+    parents: filtered.reduce((a, s) => a + s.parent_count, 0),
+    cards: filtered.reduce((a, s) => a + s.card_count, 0),
+  }),
+  [filtered],
+);
 ```
 
 Note: The `ownerId` filter matches by `owner_name` since `getSessions` returns `owner_name` not `owner_id`. Update this to filter by comparing owner_name. Actually, a cleaner approach — store ownerId and compare against a lookup. Let me simplify: filter by `s.owner_name === owners.find(o => o.id === ownerId)?.full_name`. This is fine at this scale.
@@ -542,13 +571,13 @@ Note: The `ownerId` filter matches by `owner_name` since `getSessions` returns `
 Replace the stat tiles grid. Currently it renders 3 `<Stat>` components. Replace with 5:
 
 ```tsx
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
-        <Stat label="Cities" value={totals.cities} icon={Calendar} />
-        <Stat label="Areas" value={totals.areas} icon={Calendar} />
-        <Stat label="Total Camps" value={totals.camps} icon={Calendar} />
-        <Stat label="Parents" value={totals.parents} icon={Users} />
-        <Stat label="Dream Cards" value={totals.cards} icon={Sparkles} />
-      </div>
+<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+  <Stat label="Cities" value={totals.cities} icon={Calendar} />
+  <Stat label="Areas" value={totals.areas} icon={Calendar} />
+  <Stat label="Total Camps" value={totals.camps} icon={Calendar} />
+  <Stat label="Parents" value={totals.parents} icon={Users} />
+  <Stat label="Dream Cards" value={totals.cards} icon={Sparkles} />
+</div>
 ```
 
 (The icon choices are illustrative — reuse the same icons already imported.)
@@ -611,6 +640,7 @@ In the desktop table, update the "Chapter" column header to "Area" and `s.chapte
 ```bash
 cd ~/Projects/care-camp-app && npm run build
 ```
+
 Expected: `✓ built in Xs`. Fix any TypeScript errors (likely `totals.camps` vs `totals.length` references if Stat components were wired differently).
 
 - [ ] **Step 8: Commit**
@@ -624,6 +654,7 @@ cd ~/Projects/care-camp-app && git add src/routes/admin.index.tsx && git commit 
 ## Task 6: Dashboard — Owner Column + Registrations Chart + Avg Duration
 
 **Files:**
+
 - Modify: `src/routes/admin.index.tsx`
 
 Add owner name to camp list, registrations-over-time bar chart, and avg duration insight.
@@ -642,26 +673,26 @@ import { getRegistrationTimeline } from "@/lib/api";
 In the `Dashboard` component, add state and effect for the chart:
 
 ```tsx
-  const [timeline, setTimeline] = useState<{ date: string; count: number }[]>([]);
+const [timeline, setTimeline] = useState<{ date: string; count: number }[]>([]);
 ```
 
 Add a useEffect that refetches the timeline whenever filters change:
 
 ```tsx
-  useEffect(() => {
-    const isOpenFilter = status === "all" ? undefined : status === "open";
-    const ownerFilter = ownerId === "all" ? undefined : ownerId;
-    const cityFilter = city === "all" ? undefined : city;
-    const areaFilter = area === "all" ? undefined : area;
-    getRegistrationTimeline({
-      city: cityFilter,
-      area: areaFilter,
-      isOpen: isOpenFilter,
-      ownerId: ownerFilter,
-    })
-      .then(setTimeline)
-      .catch(() => {});
-  }, [city, area, status, ownerId]);
+useEffect(() => {
+  const isOpenFilter = status === "all" ? undefined : status === "open";
+  const ownerFilter = ownerId === "all" ? undefined : ownerId;
+  const cityFilter = city === "all" ? undefined : city;
+  const areaFilter = area === "all" ? undefined : area;
+  getRegistrationTimeline({
+    city: cityFilter,
+    area: areaFilter,
+    isOpen: isOpenFilter,
+    ownerId: ownerFilter,
+  })
+    .then(setTimeline)
+    .catch(() => {});
+}, [city, area, status, ownerId]);
 ```
 
 - [ ] **Step 3: Add avg duration computation**
@@ -669,19 +700,19 @@ Add a useEffect that refetches the timeline whenever filters change:
 Add this memoized value in the `Dashboard` component:
 
 ```tsx
-  const avgDuration = useMemo(() => {
-    const closed = sessions.filter((s) => s.closed_at);
-    if (closed.length === 0) return null;
-    const totalMs = closed.reduce((sum, s) => {
-      return sum + (new Date(s.closed_at!).getTime() - new Date(s.created_at).getTime());
-    }, 0);
-    const avgMs = totalMs / closed.length;
-    const avgMin = Math.round(avgMs / 60000);
-    if (avgMin < 60) return { text: `${avgMin}m`, count: closed.length };
-    const h = Math.floor(avgMin / 60);
-    const m = avgMin % 60;
-    return { text: m > 0 ? `${h}h ${m}m` : `${h}h`, count: closed.length };
-  }, [sessions]);
+const avgDuration = useMemo(() => {
+  const closed = sessions.filter((s) => s.closed_at);
+  if (closed.length === 0) return null;
+  const totalMs = closed.reduce((sum, s) => {
+    return sum + (new Date(s.closed_at!).getTime() - new Date(s.created_at).getTime());
+  }, 0);
+  const avgMs = totalMs / closed.length;
+  const avgMin = Math.round(avgMs / 60000);
+  if (avgMin < 60) return { text: `${avgMin}m`, count: closed.length };
+  const h = Math.floor(avgMin / 60);
+  const m = avgMin % 60;
+  return { text: m > 0 ? `${h}h ${m}m` : `${h}h`, count: closed.length };
+}, [sessions]);
 ```
 
 - [ ] **Step 4: Add avg duration insight JSX**
@@ -689,12 +720,16 @@ Add this memoized value in the `Dashboard` component:
 Add this block between the stat tiles and the camps table, visible only to `mad_admin`/`mad_employee`/`super_admin`:
 
 ```tsx
-      {avgDuration && (profile?.role === "super_admin" || profile?.role === "mad_employee") && (
-        <p className="text-sm text-muted-foreground mb-4">
-          Avg camp duration: <span className="font-semibold text-foreground">{avgDuration.text}</span>
-          <span className="ml-1">· based on {avgDuration.count} closed camp{avgDuration.count !== 1 ? "s" : ""}</span>
-        </p>
-      )}
+{
+  avgDuration && (profile?.role === "super_admin" || profile?.role === "mad_employee") && (
+    <p className="text-sm text-muted-foreground mb-4">
+      Avg camp duration: <span className="font-semibold text-foreground">{avgDuration.text}</span>
+      <span className="ml-1">
+        · based on {avgDuration.count} closed camp{avgDuration.count !== 1 ? "s" : ""}
+      </span>
+    </p>
+  );
+}
 ```
 
 - [ ] **Step 5: Add chart JSX**
@@ -702,36 +737,39 @@ Add this block between the stat tiles and the camps table, visible only to `mad_
 Add the registrations chart between the avg duration line and the camps table card:
 
 ```tsx
-      <div className="bg-card border border-border rounded-xl p-5 mb-6">
-        <h2 className="font-semibold text-foreground mb-4">Registrations — last 30 days</h2>
-        {timeline.every((d) => d.count === 0) ? (
-          <p className="text-sm text-muted-foreground text-center py-8">No registrations in the last 30 days.</p>
-        ) : (
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={timeline} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-              <XAxis
-                dataKey="date"
-                tick={{ fontSize: 10 }}
-                tickFormatter={(d: string) => {
-                  const date = new Date(d + "T00:00:00");
-                  return `${date.getDate()}/${date.getMonth() + 1}`;
-                }}
-                interval={4}
-              />
-              <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-              <Tooltip
-                formatter={(value: number) => [value, "Registrations"]}
-                labelFormatter={(label: string) =>
-                  new Date(label + "T00:00:00").toLocaleDateString("en-IN", {
-                    day: "numeric", month: "short",
-                  })
-                }
-              />
-              <Bar dataKey="count" fill="var(--primary)" radius={[3, 3, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        )}
-      </div>
+<div className="bg-card border border-border rounded-xl p-5 mb-6">
+  <h2 className="font-semibold text-foreground mb-4">Registrations — last 30 days</h2>
+  {timeline.every((d) => d.count === 0) ? (
+    <p className="text-sm text-muted-foreground text-center py-8">
+      No registrations in the last 30 days.
+    </p>
+  ) : (
+    <ResponsiveContainer width="100%" height={160}>
+      <BarChart data={timeline} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+        <XAxis
+          dataKey="date"
+          tick={{ fontSize: 10 }}
+          tickFormatter={(d: string) => {
+            const date = new Date(d + "T00:00:00");
+            return `${date.getDate()}/${date.getMonth() + 1}`;
+          }}
+          interval={4}
+        />
+        <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+        <Tooltip
+          formatter={(value: number) => [value, "Registrations"]}
+          labelFormatter={(label: string) =>
+            new Date(label + "T00:00:00").toLocaleDateString("en-IN", {
+              day: "numeric",
+              month: "short",
+            })
+          }
+        />
+        <Bar dataKey="count" fill="var(--primary)" radius={[3, 3, 0, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
+  )}
+</div>
 ```
 
 - [ ] **Step 6: Add owner to mobile camp card**
@@ -739,22 +777,24 @@ Add the registrations chart between the avg duration line and the camps table ca
 In the mobile camp card, add the owner name as a small line below the city/area heading:
 
 ```tsx
-                  <div className="font-semibold text-foreground">
-                    {s.city} — {s.area}
-                  </div>
-                  {s.owner_name && (
-                    <div className="text-xs text-muted-foreground mt-0.5">{s.owner_name}</div>
-                  )}
+<div className="font-semibold text-foreground">
+  {s.city} — {s.area}
+</div>;
+{
+  s.owner_name && <div className="text-xs text-muted-foreground mt-0.5">{s.owner_name}</div>;
+}
 ```
 
 - [ ] **Step 7: Add owner column to desktop table**
 
 In the desktop table `<thead>`, add after the Area/Chapter column:
+
 ```tsx
 <th className="text-left font-semibold px-5 py-3">Owner</th>
 ```
 
 In each desktop `<tr>`, add the matching `<td>`:
+
 ```tsx
 <td className="px-5 py-3 text-muted-foreground text-sm">{s.owner_name || "—"}</td>
 ```
@@ -764,6 +804,7 @@ In each desktop `<tr>`, add the matching `<td>`:
 ```bash
 cd ~/Projects/care-camp-app && npm run build
 ```
+
 Expected: `✓ built in Xs`. Recharts types may cause minor warnings — fix if errors.
 
 - [ ] **Step 9: Commit**
@@ -777,6 +818,7 @@ cd ~/Projects/care-camp-app && git add src/routes/admin.index.tsx && git commit 
 ## Task 7: Update admin.sessions.$sessionId.tsx — Area/Venue + Summary Strip
 
 **Files:**
+
 - Modify: `src/routes/admin.sessions.$sessionId.tsx`
 
 Replace chapter with area throughout, add venue stat block, add per-camp summary strip.
@@ -799,16 +841,19 @@ function formatDuration(startIso: string, endIso: string | null): string {
 - [ ] **Step 2: Update heading and chapter → area references**
 
 In `SessionDetail`, replace:
+
 ```tsx
-      <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-        {session.city} — {session.chapter} — {dateStr}
-      </h1>
+<h1 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+  {session.city} — {session.chapter} — {dateStr}
+</h1>
 ```
+
 With:
+
 ```tsx
-      <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
-        {session.city} — {session.area} — {dateStr}
-      </h1>
+<h1 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+  {session.city} — {session.area} — {dateStr}
+</h1>
 ```
 
 - [ ] **Step 3: Add per-camp summary strip**
@@ -816,26 +861,38 @@ With:
 Add this summary strip immediately below the heading and open/close toggle row (before the `<div className="grid">` that contains stats and registrations):
 
 ```tsx
-      {session.parent_count > 0 && (
-        <div className="flex flex-wrap items-center gap-2 mb-6 text-sm text-muted-foreground">
-          <span className="font-semibold text-foreground">{session.parent_count} parents</span>
-          <span>·</span>
-          <span>
+{
+  session.parent_count > 0 && (
+    <div className="flex flex-wrap items-center gap-2 mb-6 text-sm text-muted-foreground">
+      <span className="font-semibold text-foreground">{session.parent_count} parents</span>
+      <span>·</span>
+      <span>
+        <span className="font-semibold text-foreground">
+          {Math.round((session.card_count / session.parent_count) * 100)}%
+        </span>{" "}
+        got cards
+      </span>
+      <span>·</span>
+      <span>
+        {session.closed_at ? (
+          <>
+            Ran for{" "}
             <span className="font-semibold text-foreground">
-              {Math.round((session.card_count / session.parent_count) * 100)}%
-            </span>{" "}
-            got cards
-          </span>
-          <span>·</span>
-          <span>
-            {session.closed_at ? (
-              <>Ran for <span className="font-semibold text-foreground">{formatDuration(session.created_at, session.closed_at)}</span></>
-            ) : (
-              <>Open for <span className="font-semibold text-foreground">{formatDuration(session.created_at, null)}</span></>
-            )}
-          </span>
-        </div>
-      )}
+              {formatDuration(session.created_at, session.closed_at)}
+            </span>
+          </>
+        ) : (
+          <>
+            Open for{" "}
+            <span className="font-semibold text-foreground">
+              {formatDuration(session.created_at, null)}
+            </span>
+          </>
+        )}
+      </span>
+    </div>
+  );
+}
 ```
 
 - [ ] **Step 4: Update sidebar stat blocks**
@@ -856,6 +913,7 @@ Replace the existing stat blocks in the `<aside>`. Add `area` and `venue` (venue
 ```bash
 cd ~/Projects/care-camp-app && npm run build
 ```
+
 Expected: `✓ built in Xs`.
 
 - [ ] **Step 6: Final commit + push**
@@ -871,35 +929,36 @@ cd ~/Projects/care-camp-app && git push
 
 **Spec coverage:**
 
-| Spec requirement | Task |
-|-----------------|------|
-| Rename chapter → area in DB | Task 1 ✓ |
-| Add venue column | Task 1 ✓ |
-| Add closed_at column | Task 1 ✓ |
-| CampSession type updated | Task 2 ✓ |
-| createSession(city, area, venue, date) | Task 2 ✓ |
-| getSessions joins profiles for owner_name | Task 2 ✓ |
-| toggleCampStatus writes closed_at | Task 2 ✓ |
-| getRegistrationTimeline | Task 3 ✓ |
-| getCampOwners | Task 3 ✓ |
-| City combobox with 20 cities | Task 4 ✓ |
-| Area field (replaces chapter) | Task 4 ✓ |
-| Venue field (optional) | Task 4 ✓ |
-| Confirmation page updated | Task 4 ✓ |
-| 5 stat tiles (cities, areas, camps, parents, cards) | Task 5 ✓ |
-| 4 filters (city, area, status, assigned-to) | Task 5 ✓ |
-| chapter → area in camp list labels | Task 5 ✓ |
-| Owner column mobile + desktop | Task 6 ✓ |
+| Spec requirement                                      | Task     |
+| ----------------------------------------------------- | -------- |
+| Rename chapter → area in DB                           | Task 1 ✓ |
+| Add venue column                                      | Task 1 ✓ |
+| Add closed_at column                                  | Task 1 ✓ |
+| CampSession type updated                              | Task 2 ✓ |
+| createSession(city, area, venue, date)                | Task 2 ✓ |
+| getSessions joins profiles for owner_name             | Task 2 ✓ |
+| toggleCampStatus writes closed_at                     | Task 2 ✓ |
+| getRegistrationTimeline                               | Task 3 ✓ |
+| getCampOwners                                         | Task 3 ✓ |
+| City combobox with 20 cities                          | Task 4 ✓ |
+| Area field (replaces chapter)                         | Task 4 ✓ |
+| Venue field (optional)                                | Task 4 ✓ |
+| Confirmation page updated                             | Task 4 ✓ |
+| 5 stat tiles (cities, areas, camps, parents, cards)   | Task 5 ✓ |
+| 4 filters (city, area, status, assigned-to)           | Task 5 ✓ |
+| chapter → area in camp list labels                    | Task 5 ✓ |
+| Owner column mobile + desktop                         | Task 6 ✓ |
 | Registrations chart (last 30 days, filter-responsive) | Task 6 ✓ |
-| Avg duration insight (mad_admin only) | Task 6 ✓ |
-| Camp heading uses area not chapter | Task 7 ✓ |
-| Venue in sidebar (if non-null) | Task 7 ✓ |
-| Per-camp summary strip | Task 7 ✓ |
-| formatDuration helper | Task 7 ✓ |
+| Avg duration insight (mad_admin only)                 | Task 6 ✓ |
+| Camp heading uses area not chapter                    | Task 7 ✓ |
+| Venue in sidebar (if non-null)                        | Task 7 ✓ |
+| Per-camp summary strip                                | Task 7 ✓ |
+| formatDuration helper                                 | Task 7 ✓ |
 
 **Placeholder scan:** No TBDs. All code blocks are complete.
 
 **Type consistency:**
+
 - `CampSession.area` defined in Task 2, used in Tasks 4, 5, 6, 7 ✓
 - `CampSession.venue` defined in Task 2, used in Tasks 4, 7 ✓
 - `CampSession.closed_at` defined in Task 2, used in Tasks 6, 7 ✓
@@ -909,6 +968,7 @@ cd ~/Projects/care-camp-app && git push
 - `formatDuration` defined in Task 7, used only in Task 7 ✓
 
 **Ordering check:**
+
 - Task 1 (schema) must precede all code tasks ✓
 - Task 2 (api.ts types) must precede Tasks 4–7 ✓
 - Task 3 (api.ts new functions) must precede Tasks 5–6 ✓

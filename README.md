@@ -15,13 +15,13 @@ Mobile web app for MAD Care Camp entry events. A parent and child answer 5 aspir
 
 ## Tech Stack
 
-| Layer | Tool |
-|-------|------|
-| Framework | Vite + React + TypeScript |
-| Routing | TanStack Router (file-based) |
-| UI | shadcn/ui + Tailwind CSS v4 |
-| Database | Supabase (PostgreSQL) |
-| Deploy | Cloudflare Workers |
+| Layer     | Tool                         |
+| --------- | ---------------------------- |
+| Framework | Vite + React + TypeScript    |
+| Routing   | TanStack Router (file-based) |
+| UI        | shadcn/ui + Tailwind CSS v4  |
+| Database  | Supabase (PostgreSQL)        |
+| Deploy    | Cloudflare Workers           |
 
 ## Dev Setup
 
@@ -33,16 +33,16 @@ npm run dev                 # http://localhost:5173
 
 ## Key Files
 
-| File | Purpose |
-|------|---------|
-| `src/components/DreamFlow.tsx` | Parent/child flow — all screens |
-| `src/lib/api.ts` | All DB functions |
-| `src/lib/supabase.ts` | Supabase client |
-| `src/routes/admin.index.tsx` | Admin dashboard |
-| `src/routes/admin.new.tsx` | Create new camp |
-| `src/routes/admin.sessions.$sessionId.tsx` | Camp detail + toggle + QR |
-| `src/styles.css` | Design tokens + theme |
-| `docs/design-system.md` | MAD brand guidelines |
+| File                                       | Purpose                         |
+| ------------------------------------------ | ------------------------------- |
+| `src/components/DreamFlow.tsx`             | Parent/child flow — all screens |
+| `src/lib/api.ts`                           | All DB functions                |
+| `src/lib/supabase.ts`                      | Supabase client                 |
+| `src/routes/admin.index.tsx`               | Admin dashboard                 |
+| `src/routes/admin.new.tsx`                 | Create new camp                 |
+| `src/routes/admin.sessions.$sessionId.tsx` | Camp detail + toggle + QR       |
+| `src/styles.css`                           | Design tokens + theme           |
+| `docs/design-system.md`                    | MAD brand guidelines            |
 
 ## Future Roadmap
 
