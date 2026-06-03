@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -11,12 +11,25 @@ import {
   RefreshCw,
   Radio,
   ExternalLink,
+  Pencil,
+  Archive,
+  ArchiveRestore,
+  CalendarIcon,
+  Loader2,
 } from "lucide-react";
+import { format } from "date-fns";
 import { PageGuide } from "@/components/admin/PageGuide";
 import QRCode from "qrcode";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { CITIES } from "@/lib/cities";
 import {
   getSession,
   toggleCampStatus,
+  updateSession,
+  archiveSession,
+  unarchiveSession,
   getCampCollaborators,
   addCampCollaborator,
   removeCampCollaborator,
@@ -285,6 +298,129 @@ function CampQR({ sessionId }: { sessionId: string }) {
   );
 }
 
+function EditCampModal({
+  session,
+  onClose,
+  onSaved,
+}: {
+  session: CampSession;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [city, setCity] = useState(session.city);
+  const [area, setArea] = useState(session.area);
+  const [venue, setVenue] = useState(session.venue ?? "");
+  const [date, setDate] = useState<Date | undefined>(new Date(session.date + "T00:00:00"));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const inputCls =
+    "w-full h-11 px-3 rounded-lg border border-border bg-input text-sm focus:outline-none focus:ring-2 focus:ring-ring";
+
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!city || !area || !date) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await updateSession(session.id, { city, area, venue, date: format(date, "yyyy-MM-dd") });
+      toast.success("Camp updated");
+      onSaved();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to update camp");
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
+      <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md space-y-4 max-h-[90vh] overflow-y-auto">
+        <h2 className="font-bold text-lg text-foreground">Edit camp</h2>
+        <form onSubmit={save} className="space-y-4">
+          <label className="block space-y-1.5">
+            <span className="text-sm font-semibold text-foreground">City</span>
+            <select
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              required
+              className={inputCls}
+            >
+              <option value="" disabled>
+                Select a city
+              </option>
+              {CITIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block space-y-1.5">
+            <span className="text-sm font-semibold text-foreground">Area / Community</span>
+            <input
+              value={area}
+              onChange={(e) => setArea(e.target.value)}
+              required
+              className={inputCls}
+            />
+          </label>
+          <label className="block space-y-1.5">
+            <span className="text-sm font-semibold text-foreground">Venue</span>
+            <input value={venue} onChange={(e) => setVenue(e.target.value)} className={inputCls} />
+          </label>
+          <div className="block space-y-1.5">
+            <span className="text-sm font-semibold text-foreground">Date</span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "w-full h-11 px-3 rounded-lg border border-border bg-input text-sm flex items-center justify-between text-left",
+                    !date && "text-muted-foreground",
+                  )}
+                >
+                  {date ? format(date, "PPP") : "Pick a date"}
+                  <CalendarIcon className="h-4 w-4 opacity-60" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+          {error && (
+            <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">
+              {error}
+            </p>
+          )}
+          <div className="flex gap-3 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 h-11 rounded-lg border border-border text-sm font-semibold text-muted-foreground hover:text-foreground transition"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving || !city || !area || !date}
+              className="flex-1 h-11 rounded-lg bg-primary text-primary-foreground text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40 hover:opacity-90 transition"
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save changes"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function SessionDetail() {
   const { sessionId } = Route.useParams();
   const { profile } = AdminRoute.useRouteContext();
@@ -296,6 +432,44 @@ function SessionDetail() {
   const [error, setError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState<boolean | null>(null);
   const [toggling, setToggling] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [archiving, setArchiving] = useState(false);
+  const navigate = useNavigate();
+
+  const reloadSession = async () => {
+    const { session: s } = await getSession(sessionId);
+    setSession(s);
+    setIsOpen(s.is_open);
+  };
+
+  const handleArchive = async () => {
+    if (
+      !window.confirm("Archive this camp? It will be hidden from lists and metrics. Data is kept.")
+    )
+      return;
+    setArchiving(true);
+    try {
+      await archiveSession(sessionId);
+      toast.success("Camp archived");
+      navigate({ to: "/admin/camps" });
+    } catch {
+      toast.error("Failed to archive camp");
+      setArchiving(false);
+    }
+  };
+
+  const handleUnarchive = async () => {
+    setArchiving(true);
+    try {
+      await unarchiveSession(sessionId);
+      await reloadSession();
+      toast.success("Camp restored");
+    } catch {
+      toast.error("Failed to restore camp");
+    } finally {
+      setArchiving(false);
+    }
+  };
 
   const loadRegistrations = async () => {
     if (!sessionId) return;
@@ -372,7 +546,7 @@ function SessionDetail() {
         {session.city} — {session.area} — {dateStr}
       </h1>
 
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center flex-wrap gap-3 mb-6">
         <span
           className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
             isOpen ? "bg-emerald-500/10 text-emerald-500" : "bg-secondary text-muted-foreground"
@@ -381,20 +555,60 @@ function SessionDetail() {
           {isOpen && <Radio className="h-3 w-3" />}
           {isOpen ? "Open" : "Closed"}
         </span>
-        {canManageCamp && (
+        {session.archived_at && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-500">
+            <Archive className="h-3 w-3" /> Archived
+          </span>
+        )}
+        {canManageCamp && !session.archived_at && (
+          <>
+            <button
+              onClick={handleToggle}
+              disabled={toggling || isOpen === null}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border-2 disabled:opacity-40 transition ${
+                isOpen
+                  ? "border-red-400 text-red-400 hover:bg-red-400/10"
+                  : "border-emerald-400 text-emerald-400 hover:bg-emerald-400/10"
+              }`}
+            >
+              {toggling ? "Saving…" : isOpen ? "Close Camp" : "Reopen Camp"}
+            </button>
+            <button
+              onClick={() => setShowEdit(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border-2 border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition"
+            >
+              <Pencil className="h-3.5 w-3.5" /> Edit
+            </button>
+            <button
+              onClick={handleArchive}
+              disabled={archiving}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border-2 border-border text-muted-foreground hover:text-amber-500 hover:border-amber-400/40 disabled:opacity-40 transition"
+            >
+              <Archive className="h-3.5 w-3.5" /> Archive
+            </button>
+          </>
+        )}
+        {canManageCamp && session.archived_at && (
           <button
-            onClick={handleToggle}
-            disabled={toggling || isOpen === null}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold border-2 disabled:opacity-40 transition ${
-              isOpen
-                ? "border-red-400 text-red-400 hover:bg-red-400/10"
-                : "border-emerald-400 text-emerald-400 hover:bg-emerald-400/10"
-            }`}
+            onClick={handleUnarchive}
+            disabled={archiving}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border-2 border-emerald-400 text-emerald-500 hover:bg-emerald-400/10 disabled:opacity-40 transition"
           >
-            {toggling ? "Saving…" : isOpen ? "Close Camp" : "Reopen Camp"}
+            <ArchiveRestore className="h-3.5 w-3.5" /> Restore camp
           </button>
         )}
       </div>
+
+      {showEdit && session && (
+        <EditCampModal
+          session={session}
+          onClose={() => setShowEdit(false)}
+          onSaved={async () => {
+            await reloadSession();
+            setShowEdit(false);
+          }}
+        />
+      )}
 
       {session.parent_count > 0 && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-6 text-sm text-muted-foreground">

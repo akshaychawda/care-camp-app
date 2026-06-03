@@ -7,6 +7,7 @@ import {
   getSessions,
   getCampOwners,
   getParentStats,
+  getReachForSessions,
   getRegistrationsByWeek,
   getLiveCamps,
   type CampSession,
@@ -55,12 +56,13 @@ function Overview() {
     setLoading(true);
     setLoadError(false);
     try {
-      const [s, ps, weekly, live, o] = await Promise.all([
-        getSessions(),
-        getParentStats(),
-        getRegistrationsByWeek(12),
-        getLiveCamps(),
-        getCampOwners(),
+      // Admins see programme-wide reach; CO/CHO see only their accessible camps (A12).
+      const isAdmin = profile?.role === "super_admin" || profile?.role === "mad_employee";
+      const [s, live, o] = await Promise.all([getSessions(), getLiveCamps(), getCampOwners()]);
+      const sessionIds = s.map((x) => x.id);
+      const [ps, weekly] = await Promise.all([
+        isAdmin ? getParentStats() : getReachForSessions(sessionIds),
+        isAdmin ? getRegistrationsByWeek(12) : getRegistrationsByWeek(12, sessionIds),
       ]);
       setSessions(s);
       setParentStats(ps);

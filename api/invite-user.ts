@@ -41,12 +41,21 @@ export default async function handler(req: Request): Promise<Response> {
     return json({ error: "Forbidden" }, 403);
   }
 
-  const { email, full_name } = await req.json();
+  const { email, full_name, role } = await req.json();
   if (!email) return json({ error: "email is required" }, 400);
 
+  // Validate the assigned role; default to the safest field role if missing/invalid.
+  const ALLOWED_ROLES = ["cho", "co", "mad_employee"];
+  const inviteRole = ALLOWED_ROLES.includes(role) ? role : "mad_employee";
+
+  // Derive the redirect from the caller's origin (so it works on any domain, incl.
+  // a future custom domain), falling back to APP_URL then the known deployment. (B7)
+  const origin =
+    req.headers.get("origin") ?? process.env.APP_URL ?? "https://mad-care-camps.vercel.app";
+
   const { data: inviteData, error } = await admin.auth.admin.inviteUserByEmail(email, {
-    data: { full_name: full_name ?? "", role: "mad_employee", status: "active" },
-    redirectTo: "https://mad-care-camps.vercel.app/auth/callback",
+    data: { full_name: full_name ?? "", role: inviteRole, status: "active" },
+    redirectTo: `${origin}/auth/callback`,
   });
 
   if (error) return json({ error: error.message }, 400);
@@ -58,7 +67,7 @@ export default async function handler(req: Request): Promise<Response> {
         id: inviteData.user.id,
         full_name: full_name ?? "",
         email,
-        role: "mad_employee",
+        role: inviteRole,
         status: "invited",
       },
       { onConflict: "id" },

@@ -374,6 +374,7 @@ function UserRow({
 function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: () => void }) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [role, setRole] = useState<UserRole>("cho");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -393,7 +394,7 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ email, full_name: name }),
+        body: JSON.stringify({ email, full_name: name, role }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -414,7 +415,7 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 px-4">
       <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-sm space-y-4">
-        <h2 className="font-bold text-lg text-foreground">Invite MAD Employee</h2>
+        <h2 className="font-bold text-lg text-foreground">Invite User</h2>
         {done ? (
           <div className="text-center space-y-3 py-4">
             <Check className="h-10 w-10 text-emerald-500 mx-auto" />
@@ -452,6 +453,18 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
                 placeholder="priya@makeadiff.in"
                 className={inputCls}
               />
+            </label>
+            <label className="block space-y-1.5">
+              <span className="text-sm font-semibold text-foreground">Role</span>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value as UserRole)}
+                className={inputCls}
+              >
+                <option value="cho">{ROLE_LABELS.cho}</option>
+                <option value="co">{ROLE_LABELS.co}</option>
+                <option value="mad_employee">{ROLE_LABELS.mad_employee}</option>
+              </select>
             </label>
             {error && (
               <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">

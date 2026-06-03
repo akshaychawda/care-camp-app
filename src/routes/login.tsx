@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Loader2, Mail, CheckCircle2 } from "lucide-react";
 import { signInWithMagicLink } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
-import type { UserRole } from "@/lib/supabase";
 import madLogo from "@/assets/mad-logo.png";
 
 type SearchParams = { redirect?: string; error?: string };
@@ -22,11 +21,6 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
-const ROLE_LABELS: Record<string, string> = {
-  co: "Chapter Organizer (CO)",
-  cho: "Community Health Organizer (CHO)",
-};
-
 const ERROR_MESSAGES: Record<string, string> = {
   rejected: "Your access request was not approved. Contact MAD admin for help.",
   disabled: "Your account has been disabled. Contact MAD admin for help.",
@@ -39,7 +33,6 @@ function LoginPage() {
   const [mode, setMode] = useState<"signin" | "register">("signin");
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState<UserRole>("cho");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
@@ -50,7 +43,7 @@ function LoginPage() {
     setError(null);
     try {
       if (mode === "register") {
-        await signInWithMagicLink(email, { full_name: fullName, role });
+        await signInWithMagicLink(email, { full_name: fullName });
       } else {
         await signInWithMagicLink(email);
       }
@@ -99,28 +92,16 @@ function LoginPage() {
 
       <form onSubmit={submit} className="space-y-4">
         {mode === "register" && (
-          <>
-            <Field label="Your full name">
-              <input
-                type="text"
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="e.g. Priya Sharma"
-                className={inputCls}
-              />
-            </Field>
-            <Field label="Your role">
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value as UserRole)}
-                className={inputCls}
-              >
-                <option value="cho">{ROLE_LABELS.cho}</option>
-                <option value="co">{ROLE_LABELS.co}</option>
-              </select>
-            </Field>
-          </>
+          <Field label="Your full name">
+            <input
+              type="text"
+              required
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="e.g. Priya Sharma"
+              className={inputCls}
+            />
+          </Field>
         )}
 
         <Field label="Work email">

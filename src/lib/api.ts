@@ -11,6 +11,7 @@ export type CampSession = {
   created_at: string;
   closed_at: string | null;
   is_open: boolean;
+  archived_at: string | null;
   parent_count: number;
   card_count: number;
   owner_name: string | null;
@@ -40,6 +41,7 @@ function toSession(
     created_at: string;
     closed_at: string | null;
     is_open: boolean;
+    archived_at?: string | null;
     profiles?: { full_name: string } | null;
   },
   regs: { card_generated: boolean }[],
@@ -53,6 +55,7 @@ function toSession(
     created_at: raw.created_at,
     closed_at: raw.closed_at ?? null,
     is_open: raw.is_open,
+    archived_at: raw.archived_at ?? null,
     parent_count: regs.length,
     card_count: regs.filter((r) => r.card_generated).length,
     owner_name: (raw.profiles as { full_name: string } | null)?.full_name ?? null,
@@ -81,6 +84,7 @@ export async function getSessions(): Promise<CampSession[]> {
   const { data, error } = await supabase
     .from("camp_sessions")
     .select("*, parent_registrations(id, card_generated), profiles!created_by(full_name)")
+    .is("archived_at", null)
     .order("date", { ascending: false });
   if (error) throw error;
   return (data ?? []).map((s) => toSession(s, s.parent_registrations ?? []));
@@ -182,6 +186,35 @@ export async function toggleCampStatus(id: string, isOpen: boolean): Promise<voi
   if (error) throw error;
 }
 
+export async function updateSession(
+  id: string,
+  fields: { city: string; area: string; venue: string; date: string },
+): Promise<void> {
+  const { error } = await supabase
+    .from("camp_sessions")
+    .update({
+      city: fields.city,
+      area: fields.area.trim().replace(/\b\w/g, (c) => c.toUpperCase()),
+      venue: fields.venue || null,
+      date: fields.date,
+    })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function archiveSession(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("camp_sessions")
+    .update({ archived_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function unarchiveSession(id: string): Promise<void> {
+  const { error } = await supabase.from("camp_sessions").update({ archived_at: null }).eq("id", id);
+  if (error) throw error;
+}
+
 export async function getCampStatus(id: string): Promise<{ is_open: boolean; city: string }> {
   const { data, error } = await supabase
     .from("camp_sessions")
@@ -203,7 +236,8 @@ export type ParentStats = {
 export async function getParentStats(): Promise<ParentStats> {
   const { data, error } = await supabase
     .from("parent_registrations")
-    .select("phone, card_generated");
+    .select("phone, card_generated, camp_sessions!inner(archived_at)")
+    .is("camp_sessions.archived_at", null);
   if (error) throw error;
   const rows = data ?? [];
   return {
@@ -214,15 +248,40 @@ export async function getParentStats(): Promise<ParentStats> {
   };
 }
 
+// Reach scoped to a specific set of camps — used so CO/CHO Overview tiles reflect
+// only their own camps. We filter explicitly by accessible session ids (which come
+// from the RLS-scoped getSessions), so this is correct regardless of whether
+// parent_registrations itself has row-level security. (A12)
+export async function getReachForSessions(sessionIds: string[]): Promise<ParentStats> {
+  if (sessionIds.length === 0) {
+    return { totalChildren: 0, uniqueParents: 0, cardsGenerated: 0 };
+  }
+  const { data, error } = await supabase
+    .from("parent_registrations")
+    .select("phone, card_generated")
+    .in("session_id", sessionIds);
+  if (error) throw error;
+  const rows = data ?? [];
+  return {
+    totalChildren: rows.length,
+    uniqueParents: new Set(rows.map((r) => normalizePhone(r.phone))).size,
+    cardsGenerated: rows.filter((r) => r.card_generated).length,
+  };
+}
+
 export async function getRegistrationsByWeek(
   weeks = 12,
+  sessionIds?: string[],
 ): Promise<{ week: string; count: number }[]> {
   const since = new Date();
   since.setDate(since.getDate() - weeks * 7);
-  const { data, error } = await supabase
+  let query = supabase
     .from("parent_registrations")
-    .select("created_at")
+    .select("created_at, camp_sessions!inner(archived_at)")
+    .is("camp_sessions.archived_at", null)
     .gte("created_at", since.toISOString());
+  if (sessionIds) query = query.in("session_id", sessionIds);
+  const { data, error } = await query;
   if (error) throw error;
   const rows = data ?? [];
 
@@ -250,6 +309,7 @@ export async function getLiveCamps(): Promise<{ id: string; city: string; area: 
     .from("camp_sessions")
     .select("id, city, area")
     .eq("is_open", true)
+    .is("archived_at", null)
     .order("created_at", { ascending: false });
   if (error) return [];
   return data ?? [];

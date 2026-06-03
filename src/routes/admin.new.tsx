@@ -7,6 +7,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { createSession, type CampSession } from "@/lib/api";
+import { CITIES } from "@/lib/cities";
 
 export const Route = createFileRoute("/admin/new")({
   component: NewCamp,
@@ -14,29 +15,6 @@ export const Route = createFileRoute("/admin/new")({
     meta: [{ title: "Create Camp — MAD Admin" }],
   }),
 });
-
-const CITIES = [
-  "Ahmedabad",
-  "Bengaluru",
-  "Chandigarh",
-  "Chennai",
-  "Cochin",
-  "Coimbatore",
-  "Delhi",
-  "Dehradun",
-  "Goa",
-  "Guntur",
-  "Gwalior",
-  "Hyderabad",
-  "Kolkata",
-  "Lucknow",
-  "Mumbai",
-  "Mysore",
-  "Nagpur",
-  "Pune",
-  "Trivandrum",
-  "Vijayawada",
-];
 
 function NewCamp() {
   const [city, setCity] = useState("");
