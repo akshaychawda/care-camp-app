@@ -99,7 +99,7 @@ export function AdminLayout() {
           <div className="h-8 w-8 rounded-lg bg-sidebar-primary flex items-center justify-center">
             <img src={madLogo} alt="MAD" className="h-5 w-auto" />
           </div>
-          <span className="font-bold text-sm">MAD Admin</span>
+          <span className="font-bold text-sm">{profile?.full_name || "MAD Admin"}</span>
         </div>
         <button
           onClick={handleSignOut}

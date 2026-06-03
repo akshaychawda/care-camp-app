@@ -52,6 +52,7 @@ type FormData = {
   phone: string;
   city: string;
   area: string;
+  consent: boolean;
   childName: string;
   gender: Gender;
   q1: string;
@@ -66,6 +67,7 @@ const EMPTY: FormData = {
   phone: "",
   city: "",
   area: "",
+  consent: false,
   childName: "",
   gender: "child",
   q1: "",
@@ -283,6 +285,7 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
         phone: data.phone,
         city: data.city,
         area: data.area,
+        consent: data.consent,
         childName: data.childName,
         answers: [data.q1, data.q2, data.q3, data.q4, data.q5],
       });
@@ -349,7 +352,9 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
         {step === "parent" && (
           <ScreenForm
             heading="First, a little about you"
-            canContinue={!!(data.parentName && /^[6-9]\d{9}$/.test(data.phone) && data.area)}
+            canContinue={
+              !!(data.parentName && /^[6-9]\d{9}$/.test(data.phone) && data.area && data.consent)
+            }
             onContinue={() => go("child")}
           >
             <Field
@@ -383,6 +388,18 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
               onChange={(v) => update("area", v)}
               placeholder="e.g. Koregaon Park, Baner"
             />
+            <label className="flex items-start gap-3 cursor-pointer select-none pt-1">
+              <input
+                type="checkbox"
+                checked={data.consent}
+                onChange={(e) => update("consent", e.target.checked)}
+                className="mt-0.5 h-5 w-5 shrink-0 rounded accent-primary"
+              />
+              <span className="text-sm text-muted-foreground leading-snug">
+                I agree to Make A Difference using these details to share my child's card and
+                contact me about its programmes.
+              </span>
+            </label>
           </ScreenForm>
         )}
 
@@ -468,6 +485,7 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
                 phone: prev.phone,
                 city: prev.city,
                 area: prev.area,
+                consent: prev.consent,
               }));
               setImageUrl(null);
               setCaption(null);

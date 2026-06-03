@@ -101,24 +101,50 @@ export async function getSession(
 
 // ─── Registrations ─────────────────────────────────────────────────────────────
 
+// Canonicalise an Indian mobile number to its bare 10 digits, so "+91 98765 43210",
+// "098765 43210" and "9876543210" all dedup to the same family. (A8)
+export function normalizePhone(raw: string): string {
+  const digits = (raw || "").replace(/\D/g, "");
+  return digits.length >= 10 ? digits.slice(-10) : digits;
+}
+
 export async function registerParentAndChild(params: {
   sessionId: string;
   parentName: string;
   phone: string;
   city: string;
   area: string;
+  consent: boolean;
   childName: string;
   answers: string[];
 }): Promise<Registration> {
+  const phone = normalizePhone(params.phone);
+  const childName = params.childName.trim();
+
+  // Soft duplicate guard (A9): if this phone already registered this child in this
+  // camp, reuse that registration instead of creating a new row + a new (paid) image.
+  // generate-image is idempotent, so the existing card is simply returned.
+  const { data: existing } = await supabase
+    .from("parent_registrations")
+    .select("*")
+    .eq("session_id", params.sessionId)
+    .eq("phone", phone)
+    .ilike("child_name", childName)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (existing) return existing;
+
   const { data: reg, error: regError } = await supabase
     .from("parent_registrations")
     .insert({
       session_id: params.sessionId,
       name: params.parentName,
-      phone: params.phone,
+      phone,
       city: params.city,
       area: params.area.trim().replace(/\b\w/g, (c) => c.toUpperCase()),
-      child_name: params.childName,
+      consent_at: params.consent ? new Date().toISOString() : null,
+      child_name: childName,
     })
     .select()
     .single();
@@ -182,7 +208,8 @@ export async function getParentStats(): Promise<ParentStats> {
   const rows = data ?? [];
   return {
     totalChildren: rows.length,
-    uniqueParents: new Set(rows.map((r) => r.phone)).size,
+    // Normalize when deduping so legacy raw + new canonical phones don't double-count. (A8)
+    uniqueParents: new Set(rows.map((r) => normalizePhone(r.phone))).size,
     cardsGenerated: rows.filter((r) => r.card_generated).length,
   };
 }

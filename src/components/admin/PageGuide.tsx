@@ -95,7 +95,7 @@ const GUIDES: Record<string, GuideContent> = {
       },
       {
         heading: "On camp day",
-        body: "Open the camp → tap 'Show QR fullscreen' → hold your phone up for each parent to scan. That's it.",
+        body: "Your CO opens the camp. Once it's live, tap into it, tap 'Show QR fullscreen', and hold your phone up for each parent to scan. That's it.",
       },
     ],
   },

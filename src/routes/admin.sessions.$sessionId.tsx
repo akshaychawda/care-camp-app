@@ -271,7 +271,7 @@ function CampQR({ sessionId }: { sessionId: string }) {
           onClick={() => setFullscreen(true)}
           className="w-full h-9 rounded-lg bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition"
         >
-          Show to parent ↗
+          Show QR fullscreen ↗
         </button>
         <button
           onClick={copy}

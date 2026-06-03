@@ -91,20 +91,21 @@ function NewCamp() {
 
       <form onSubmit={submit} className="bg-secondary/30 rounded-xl p-6 space-y-5">
         <FormField label="City">
-          <input
-            list="city-options"
+          <select
             value={city}
             onChange={(e) => setCity(e.target.value)}
-            placeholder="Select or type a city"
             required
-            autoComplete="off"
             className="w-full h-11 px-3 rounded-lg border border-border bg-input text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          />
-          <datalist id="city-options">
+          >
+            <option value="" disabled>
+              Select a city
+            </option>
             {CITIES.map((c) => (
-              <option key={c} value={c} />
+              <option key={c} value={c}>
+                {c}
+              </option>
             ))}
-          </datalist>
+          </select>
         </FormField>
 
         <FormField label="Area / Community">
@@ -145,6 +146,7 @@ function NewCamp() {
                 mode="single"
                 selected={date}
                 onSelect={setDate}
+                disabled={{ before: new Date(new Date().setHours(0, 0, 0, 0)) }}
                 initialFocus
                 className={cn("p-3 pointer-events-auto")}
               />

@@ -37,7 +37,6 @@ function CardPage() {
       });
   }, [registrationId]);
 
-
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-6">
@@ -95,7 +94,9 @@ function CardPage() {
               {card.child_name}'s Dream Card
             </p>
             <button
-              onClick={() => downloadCardWithCaption(card.image_url!, card.caption, card.child_name)}
+              onClick={() =>
+                downloadCardWithCaption(card.image_url!, card.caption, card.child_name)
+              }
               className="w-full h-12 rounded-2xl bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition"
             >
               <Download className="h-5 w-5" /> Download Card
