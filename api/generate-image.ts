@@ -16,8 +16,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: "Server misconfiguration" });
   }
 
-  const { registrationId, childName, gender, aspiration, subject, problem, selfDescription } =
-    req.body ?? {};
+  const {
+    registrationId,
+    childName,
+    gender,
+    aspiration,
+    subject,
+    problem,
+    roleModel,
+    selfDescription,
+  } = req.body ?? {};
 
   if (!registrationId) return res.status(400).json({ error: "registrationId required" });
 
@@ -25,10 +33,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  // Verify registrationId exists + return cached image if already generated (idempotency)
+  // Verify registrationId exists + return cached image if already generated (idempotency).
+  // Return the stored caption too — it's persisted so the card link / re-fetches stay complete.
   const { data: registration, error: regError } = await supabase
     .from("parent_registrations")
-    .select("id, image_url")
+    .select("id, image_url, caption")
     .eq("id", registrationId)
     .single();
 
@@ -37,7 +46,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (registration.image_url) {
-    return res.status(200).json({ imageUrl: registration.image_url, caption: null });
+    return res
+      .status(200)
+      .json({ imageUrl: registration.image_url, caption: registration.caption ?? null });
   }
 
   const name = childName || "a child";
@@ -65,6 +76,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 - Wants to become: ${aspiration || "someone great"}
 - Loves: ${subject || "learning"}
 - Wants to fix: ${problem || "problems in the world"}
+- Looks up to: ${roleModel || "someone inspiring"}
 - One word to describe themselves: ${selfDescription || "brave"}
 
 Task 1 — scene_prompt: Describe ONLY the scene content in 40–60 words. No style words at all — just what is happening.
@@ -74,7 +86,7 @@ Rules:
 - Weave in their love for "${subject}" visually somewhere in the scene
 - Indian cultural context — clothing, environment, people around them
 
-Task 2 — caption: One beautiful, poetic sentence under 20 words. Use ${name}. Reference their aspiration and the difference they will make. No clichés.
+Task 2 — caption: One beautiful, poetic sentence under 20 words. Use ${name}. Reference their aspiration and the difference they will make. If it fits naturally, you may nod to who they look up to ("${roleModel || ""}") — but never force it. No clichés.
 
 Respond with JSON only: {"scene_prompt": "...", "caption": "..."}`,
         },
@@ -141,7 +153,7 @@ Respond with JSON only: {"scene_prompt": "...", "caption": "..."}`,
   // Step 4: Mark card generated
   await supabase
     .from("parent_registrations")
-    .update({ card_generated: true, image_url: publicUrl })
+    .update({ card_generated: true, image_url: publicUrl, caption: caption || null })
     .eq("id", registrationId);
 
   return res.status(200).json({ imageUrl: publicUrl, caption });

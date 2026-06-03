@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, Copy, Check, Download, Sparkles, Loader2 } from 
 import madLogo from "@/assets/mad-logo.png";
 import dreamCard from "@/assets/dream-card.jpg";
 import { registerParentAndChild, getCampStatus } from "@/lib/api";
+import { downloadCardWithCaption } from "@/lib/card-image";
 
 type Step =
   | "checking"
@@ -241,6 +242,7 @@ async function generateDreamCard(
         aspiration: data.q1,
         subject: data.q2,
         problem: data.q3,
+        roleModel: data.q4,
         selfDescription: data.q5,
       }),
     });
@@ -457,6 +459,7 @@ export function DreamFlow({ sessionId }: { sessionId?: string }) {
           <NextChild
             childName={data.childName || "Your child"}
             imageUrl={imageUrl}
+            caption={caption}
             registrationId={registrationId}
             onNext={() => {
               setData((prev) => ({
@@ -719,23 +722,8 @@ function Reveal({
 
   const src = imageUrl ?? dreamCard;
 
-  const handleDownload = async () => {
-    try {
-      const res = await fetch(src);
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${childName}-dream-card.png`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      const a = document.createElement("a");
-      a.href = src;
-      a.download = `${childName}-dream-card.png`;
-      a.click();
-    }
-  };
+  // Bake the on-screen caption into the downloaded file so it matches what's shown.
+  const handleDownload = () => downloadCardWithCaption(src, displayCaption, childName);
 
   return (
     <div className="flex flex-col">
@@ -787,31 +775,19 @@ function Reveal({
 function NextChild({
   childName,
   imageUrl,
+  caption,
   registrationId,
   onNext,
 }: {
   childName: string;
   imageUrl: string | null;
+  caption: string | null;
   registrationId: string | null;
   onNext: () => void;
 }) {
-  const handleDownload = async () => {
+  const handleDownload = () => {
     if (!imageUrl) return;
-    try {
-      const res = await fetch(imageUrl);
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${childName}-dream-card.png`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch {
-      const a = document.createElement("a");
-      a.href = imageUrl;
-      a.download = `${childName}-dream-card.png`;
-      a.click();
-    }
+    downloadCardWithCaption(imageUrl, caption, childName);
   };
 
   return (
